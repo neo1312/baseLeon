@@ -1,0 +1,40 @@
+
+{% extends 'list.html' %}
+
+{% block columns %}
+    <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Cliente</th>
+        <th scope="col">Monedero</th>
+        <th scope="col">Importe</th>
+        <th scope="col">fecha</th>
+        <th scope="col">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for o in sales%}
+        <tr>
+            <td>{{ o.id }}</td>
+            <td>{{ o.client}}</td>
+            <td>{{ o.monedero}}</td>
+            <td>$ {{ o.get_cart_total|floatformat:2}}</td>
+            <td>{{ o.date_created}}</td>
+            <td>
+                    <a href="/sale/edit/{{o.id}}" class="btn btn-warning btn-xs btn-flat">
+                        <i class="fas fa-edit"></i></a>
+              
+                    <a href="/sale/delete/{{o.id}}" class="btn btn-danger btn-xs btn-flat">
+                            <i class="fas fa-trash-alt"></i></a>
+		    <a href="/sale/pdfprint/{{o.id}}" class="btn btn-secondary btn-xs btn-flat">
+                            <i class="fas fa-print"></i></a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+{%block ventasMayoreo%}
+<select class="form-select" aria-label="Default select example" id="btnOpcion">
+  <option value="menudeo">Menudeo</option>
+  <option value="mayoreo">Mayoreo</option>
+</select>
+{%endblock%}

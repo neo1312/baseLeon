@@ -1,0 +1,58 @@
+{%extends 'pdfprint.html'%}
+
+{%block cabecera%}
+    <div class="row">
+        <div class="col-12">
+    		<div class="invoice-title">
+                <h5>Ferretería León Tulancingo</h5><h6 class="text-left">Folio Venta: {{devolution.id}}</h6><h6 class="text-left">Fecha: {{devolution.date_created}}</h6>
+
+    		</div>
+    		<hr>
+    		<div class="row">
+    			<div class="col-3 small" >
+    				<address>
+    					Calle fresnos lote 7 mz.23, cp.43685<br>
+    					Col.San   Juan,  Tulancingo  Hidalgo<br>
+                        Tel.celular  y  whatsapp: 7751423616<br>
+    					Telefono: 7751423616
+    				</address>
+    			</div>
+                <div class="col-3">
+    				<address>
+    				</address>
+    			</div>
+                <div class="col-3">
+    				<address>
+    				</address>
+    			</div>
+    			<div class="col-3 text-left small">
+    				<address>
+        			<strong>Datos de cliente</strong><br>
+                    Nombre: {{devolution.client.name}}<br>
+                    Telefono: {{devolution.client.phoneNumber}}<br>
+    				</address>
+    			</div>
+    		</div>
+    </div>
+</div>
+ 
+{%endblock%}
+
+{%block detalle%}
+{%for item in items%}
+            <tr>
+                <td>{{item.product.id}}</td>
+                <td class="text-lowercase">{{item.product.name}}</td>
+                <td class="text-center">$ {{item.cost}}</td>
+                <td class="text-center">{{item.quantity}}</td>
+		<td class="text-right">$ {{item.get_total|floatformat:2}}</td>
+            </tr>
+{%endfor%}
+            <tr>
+                <td class="no-line"></td>
+                <td class="no-line"></td>
+                <td class="no-line"></td>
+                <td class="no-line text-center"><strong>Total</strong></td>
+                <td class="no-line text-right"><strong>$ {{devolution.get_cart_total}}</strong></td>
+            </tr>
+{%endblock%}

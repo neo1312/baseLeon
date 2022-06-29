@@ -1,0 +1,9 @@
+Clone github
+
+1.-Clone the repository into local directory.
+2.-Change the database from postgresql to sqlite.
+3.-Change the server ip and write the correct one in settings file.
+4.-The most important part is create a client named "mostrador"
+5.-Add provider "general"
+
+

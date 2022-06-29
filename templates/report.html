@@ -1,0 +1,37 @@
+{% extends 'home.html' %}
+{%load static%}
+{% block body %}
+
+    <body class="hold-transition layout-top-nav">
+    <div class="wrapper">
+        <!-- Header -->
+        {% include 'header.html' %}
+        <!-- Content -->
+            <div class="content-header">
+                </div>
+            <div class="content">
+                <div class="container">
+
+{%block head%}
+	<script type="text/javascript" src={{url_js}}></script>
+
+
+<link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/css/dataTables.bootstrap4.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/css/responsive.bootstrap4.min.css' %}"/>
+{%endblock%}
+
+{%block content%}
+{%endblock%}
+
+
+               </div>
+            </div>
+        </div>
+
+    </div>
+    </body>
+ 
+{%block javascrip%}
+
+{%endblock%}
+{%endblock%}

@@ -1,0 +1,27 @@
+{% extends 'list.html' %}
+
+{% block columns %}
+    <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Name</th>
+        <th scope="col">Phone</th>
+        <th scope="col">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for c in categorys%}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.phoneNumber}}</td>
+            <td>
+                    <a href="/category/edit/{{c.id}}" class="btn btn-warning btn-xs btn-flat">
+                        <i class="fas fa-edit"></i></a>
+              
+                    <a href="/category/delete/{{c.id}}" class="btn btn-danger btn-xs btn-flat">
+                            <i class="fas fa-trash-alt"></i></a>
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}

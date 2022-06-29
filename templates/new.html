@@ -1,0 +1,24 @@
+{% extends 'body.html' %}
+{%load static%}
+
+{%block head%}
+	<script type="text/javascript" src= {{url_js}}></script>
+{%endblock%}
+
+{% block content %}
+
+{%block botones%}
+{%endblock%}
+
+        <div class="card-footer">
+		<a href="{{url_create}}" class="btn btn-primary btn-flat" id="{{btnId}}">
+			<i class="fas fa-plus"></i> Nuevo {{newBtn}}</a>
+		{%block ventasMayoreo%}
+	{%endblock%}
+            
+        </div>
+    </div>
+{% endblock %}
+
+{%block javascrip%}
+{%endblock%}

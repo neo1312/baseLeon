@@ -1,0 +1,12 @@
+{% extends 'crud.html' %}
+{% block campos%}
+
+<p>Are you sure you want to delete "{{item}}"?</p>
+
+<form method="POST">
+
+        {% csrf_token %}
+        <a href="{%url 'im:categoryList'%}" class="btn btn-primary">Cancel</a>
+         <button  type="submit" class="btn btn-danger">Confirm</button>
+</form>
+{% endblock %}

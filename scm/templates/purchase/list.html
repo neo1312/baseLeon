@@ -1,0 +1,32 @@
+{% extends 'list.html' %}
+
+{% block columns %}
+    <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Provedor</th>
+        <th scope="col">ProvedorId</th>
+        <th scope="col">Date</th>
+        <th scope="col">Importe</th>
+        <th scope="col">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for o in purchases%}
+        <tr>
+            <td>{{ o.id }}</td>
+            <td>{{ o.provider}}</td>
+            <td>{{ o.providerid}}</td>
+            <td>{{ o.date_created}}</td>
+            <td>$ {{ o.get_cart_total|floatformat:2}}</td>
+            <td>
+                    <a href="/purchase/edit/{{o.id}}" class="btn btn-warning btn-xs btn-flat">
+                        <i class="fas fa-edit"></i></a>
+              
+                    <a href="/purchase/delete/{{o.id}}" class="btn btn-danger btn-xs btn-flat">
+                            <i class="fas fa-trash-alt"></i></a>
+                   
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}

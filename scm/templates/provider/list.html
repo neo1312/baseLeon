@@ -1,0 +1,30 @@
+{% extends 'list.html' %}
+
+{% block columns %}
+    <tr>
+        <th scope="col">Id</th>
+        <th scope="col">Name</th>
+        <th scope="col">Phone</th>
+        <th scope="col">Opciones</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for o in providers%}
+        <tr>
+            <td>{{ o.id }}</td>
+            <td>{{ o.name }}</td>
+            <td>{{ o.phoneNumber}}</td>
+            <td>
+                    <a href="/provider/edit/{{o.id}}" class="btn btn-warning btn-xs btn-flat">
+                        <i class="fas fa-edit"></i></a>
+              
+                    <a href="/provider/delete/{{o.id}}" class="btn btn-danger btn-xs btn-flat">
+                            <i class="fas fa-trash-alt"></i></a>
+ 
+		    <a href="/purchase/order/{{o.id}}" class="btn btn-xs btn-flat btn-success ">
+                            <i class="fas fa-file-excel" ></i></a>
+           </td>
+        </tr>
+    {% endfor %}
+{% endblock %}

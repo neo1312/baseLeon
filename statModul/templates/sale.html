@@ -1,0 +1,53 @@
+{%extends 'report.html'%}
+
+{% block content %}
+<main>
+    <section class = "row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                <form class="row">
+                                <div class="form-outline col-md-10 autocomplete">
+  <input type="date" id="fecha" class="form-control" placeholder="Type query" />
+  <ul id="autocomplete-result" class="autocomplete-result">
+  </ul>
+                                </div>
+                            <div class="form-group col-md-2">
+                                <button class="btn btn-primary" type="submit" id="consultar" tabindex="-1">Consultar</button>
+                            </div>
+                </form>
+		
+                </div>
+            </div>
+        </div>
+    <section class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row" id="formDetalle">
+                            <div class="form-group col-md-2" >
+                                <label for="">Costo_ventas:</label>
+                                <input type="number" class="form-control detalle" placeholder="costo" id="costo" min="0" readonly="readonly"/>
+                            </div>
+                            <div class="form-group col-md-2" >
+                                <label for="">Ventas:</label>
+                                <input type="number" class="form-control detalle" placeholder="ventas" id="ventas" min="0" readonly="readonly" tabindex="-1"/>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="">Utilidad:</label>
+                                <input id="utilidad" placeholder="Utilidad"class="form-control detalle" readonly="readonly" tabindex="-1">
+                            </div>
+                            <div class="form-group col-md-2" >
+                                <button class="btn btn-secondary" type="submit" id="btnAdd",onclick="focusMethod()">Add</button>
+                            </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+ 
+

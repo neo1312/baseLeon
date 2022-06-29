@@ -1,0 +1,16 @@
+{% extends 'new.html' %}
+
+{%block botones%}
+  <div class="form-group">
+    <label for="exampleInputEmail1">Ingresar clave de cliente</label>
+    <input type="number" class="form-control" id="clientId" value="1">
+    <small  class="form-text text-muted">Clave cliente mostrador: 1</small>
+  </div>
+
+<div class="form-group">
+<select class="form-select" aria-label="Default select example" id="btnMonedero">
+  <option value="0">No monedero</option>
+  <option value="1">Compara con  monedero</option>
+</select>
+</div>
+{%endblock%}

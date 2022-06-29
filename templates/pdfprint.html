@@ -1,0 +1,46 @@
+{%extends 'home.html'%}
+{%load static%}
+
+<!------ Include the above in your HEAD tag ---------->
+{%block body%}
+{%block content%}
+<div class="container">
+    {%block cabecera%}
+    {%endblock%}
+    
+    <div class="row">
+    	<div class="col-md-12">
+    		<div class="panel panel-default">
+    			<div class="panel-heading">
+    				<h6 class="panel-title"><strong>Detalle de Venta</strong></h6>
+    			</div>
+    			<div class="panel-body">
+    				<div class="table-responsive">
+    					<table class="table table-condensed table-sm small">
+    						<thead>
+                                <tr class="d-flex">
+        							<td><strong>Código</strong></td>
+        							<td class="text-left" ><strong>Artículo</strong></td>
+        							<td class="text-center"><strong>Precio</strong></td>
+        							<td class="text-center"><strong>Cantidad</strong></td>
+        							<td class="text-right"><strong>SubTotal</strong></td>
+                                </tr>
+    						</thead>
+    						<tbody>
+
+{%block detalle%}
+{%endblock%}
+    						</tbody>
+    					</table>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+</div>
+
+</html>
+
+{%endblock%}
+{%endblock%}
+

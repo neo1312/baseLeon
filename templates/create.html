@@ -1,0 +1,145 @@
+{% extends 'home.html' %}
+{%load static%}
+{% block body %}
+
+    <body class="hold-transition layout-top-nav">
+    <div class="wrapper">
+        <!-- Header -->
+        {% include 'header.html' %}
+        <!-- Content -->
+            <div class="content-header">
+                </div>
+            <div class="content">
+                <div class="container">
+
+{%block head%}
+	<script type="text/javascript" src={{url_js}}></script>
+
+
+<link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/css/dataTables.bootstrap4.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/css/responsive.bootstrap4.min.css' %}"/>
+    <script src="{% static 'lib/datatables-1.10.20/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'lib/datatables-1.10.20/js/dataTables.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'lib/datatables-1.10.20/plugins/responsive-2.2.3/js/responsive.bootstrap4.min.js' %}"></script>
+{%endblock%}
+
+
+
+{% block content %}
+<main>
+    <section class = "row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                <form class="row">
+                                <div class="form-outline col-md-10 autocomplete">
+  <input type="text" id="buscador" class="form-control" placeholder="Type query" />
+  <ul id="autocomplete-result" class="autocomplete-result">
+  </ul>
+                                </div>
+                            <div class="form-group col-md-2">
+                                <button class="btn btn-primary" type="submit" id="btnCart" tabindex="-1">AddCart</button>
+                            </div>
+                </form>
+		
+                </div>
+            </div>
+        </div>
+
+<div class="col">
+            <div class="card">
+                <div class="card-body">
+                <form class="row">
+                                <div class="form-outline col-md-10 autocomplete">
+                                    <input type="number" step=".01" id="totalFactura" class="form-control" min="0" readonly=readonly tabindex="-1" value="{{total.get_cart_total|floatformat:2}}" />
+  <ul  class="autocomplete-result">
+  </ul>
+                                </div>
+                            <div class="form-group col-md-2">
+
+				    <a href="{{returnCreate}}" class="btn btn-success btn-xs btn-flat" id="btnFactura" tabindex="-1">
+                        <i class="fas ">Guardar</i></a>
+
+                            </div>
+                </form>
+                </div>
+            </div>
+        </div>
+  
+    </section>
+
+
+    <section class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row" id="formDetalle">
+                            <div class="form-group col-md-2" >
+                                <label for="">Quantity:</label>
+                                <input type="number" class="form-control detalle" placeholder="quantity" id="quantity" min="0" />
+                            </div>
+                            <div class="form-group col-md-2" >
+                                <label for="">Codigo:</label>
+                                <input type="number" class="form-control detalle" placeholder="codigo" id="codigo" min="0" readonly="readonly" tabindex="-1"/>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="">Description:</label>
+                                <input id="selectProduct" class="form-control detalle" readonly="readonly" tabindex="-1">
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="">P.Unit:</label>
+                                <input type="number" step=".01"class="form-control detalle" placeholder="punit" id="unitario" min="0" readonly="readonly" tabindex="-1"/>
+                            </div>
+                            <div class="form-group col-md-2" >
+                                <button class="btn btn-secondary" type="submit" id="btnAdd",onclick="focusMethod()">Add</button>
+                            </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+
+    <div class="card card-default">
+        <div class="card-body">
+            <table class="table" id="data">
+                <thead>
+                {% block columns %}
+
+                {% endblock %}
+                </thead>
+                <tbody>
+                {% block rows %}
+
+                {% endblock %}
+                
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </body>
+ 
+{%block javascrip%}
+
+ <script type="application/javascript">
+        $(function () {
+            $('#data').DataTable({
+                responsive: true,
+                autoWidth: false,
+                 pageLength : 5,
+                 lengthMenu: [[5, 10, 20, -1], [5, 10, 20, 'Todos']]
+            });
+        });
+    </script>
+{%endblock%}
+{%endblock%}
