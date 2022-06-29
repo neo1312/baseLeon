@@ -134,7 +134,6 @@ def saleItemView(request):
                 saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
                 return JsonResponse('creo nuevo registro',safe=False)
 
-
 @csrf_exempt
 def saleItemDelete(request,pk):
     item=saleItem.objects.get(id=pk)
@@ -175,6 +174,7 @@ def pdfPrint(request,pk):
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
     return response
 
+@csrf_exempt
 def saleNew(request):
     data = {
             'sale_create':'/sale/create',

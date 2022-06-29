@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from crm.models import Devolution,devolutionItem,Client,Product,devolutionItem
 from crm.forms import devolutionForm
 
+@csrf_exempt
 def devolutionList(request):
     data = {
             'entityUrl':'/devolution/new',
@@ -25,6 +26,7 @@ def devolutionList(request):
  
     return render(request, 'devolution/list.html', data)
 
+@csrf_exempt
 def devolutionEdit(request,pk):
     devolution=get_object_or_404(Devolution,id=pk)
     if request.method != 'POST':
@@ -57,6 +59,7 @@ def devolutionDelete(request,pk):
             }
     return render(request,  'devolution/delete.html',context)
 
+@csrf_exempt
 def devolutionCreate(request):
     devolution=Devolution.objects.last()
     items=devolution.devolutionitem_set.all()
@@ -89,7 +92,6 @@ def devolutionGetData(request):
         devolution=Devolution.objects.last()
         name = [qs.id,qs.name,qs.priceLista]
         return JsonResponse({'datos':name},safe=False)
-
 
 @csrf_exempt
 def devolutionItemView(request):
@@ -165,6 +167,7 @@ def devpdfPrint(request,pk):
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
     return response
 
+@csrf_exempt
 def devolutionNew(request):
     data = {
 
