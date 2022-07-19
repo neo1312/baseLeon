@@ -106,20 +106,28 @@ class saleItem(models.Model):
 
     @property
     def precioUnitario(self):
+        cost=float(self.cost)
+        margen=float(self.margen)
         if self.product.granel !=True:
-            total=math.ceil(float(self.cost)*(1+float(self.margen)))
+            total=math.ceil(cost*(1+margen))
         else:
-            if self.product.unidad == 'Gramos':
-                total=float(self.cost)*(1+float(self.margen))
-            elif self.product.unidad == 'Pieza':
-                total1=float(self.cost)*(1+float(self.margen))
-                if self.margen == self.product.margenGranel:
-                    total=math.ceil(total1)/2
+            if self.product.unidad ==  'Gramos':
+                if int(self.product.minimo)<int(self.quantity):
+                    total=(math.ceil(cost*(1+margen)*1000))/1000
                 else:
-                    total=round(total1,1)
+                    total=(math.ceil(cost*(1+margen)*1000))/1000
+            elif self.product.unidad == 'Pieza':
+                if int(self.product.minimo)<=int(self.quantity):
+                    total=cost*(1+margen)
+                else:
+                    total1=cost*(1+margen)
+                    total=round(total1*2.0)/2.0
             elif self.product.unidad == 'Metro':
-                total1=float(self.cost)*(1+float(self.margen))
-                total=round(total1*2.0)/2.0
+                if int(self.product.minimo)<=int(self.quantity):
+                    total=cost*(1+margen)
+                else:
+                    total1=cost*(1+margen)
+                    total=round(total1*2.0)/2.0
         return total
 
 
