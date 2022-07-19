@@ -15,9 +15,13 @@
 			<i class="fas fa-plus"></i> Nuevo {{newBtn}}</a>
 		{%block ventasMayoreo%}
 	{%endblock%}
-            
         </div>
-    </div>
+        
+	<div class="card-footer">
+		<a href="{{url_create}}" class="btn btn-success btn-flat" id="{{btnId}}">
+			<i class="fas fa-folder-open"></i>Ultima Venta</a>
+        </div>
+
 {% endblock %}
 
 {%block javascrip%}
