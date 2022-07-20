@@ -189,4 +189,27 @@ def saleNew(request):
             }
     return render(request, 'sale/new.html', data)
 
+@csrf_exempt
+def saleLast(request):
+    sale=Sale.objects.last()
+    items=sale.saleitem_set.all()
+    data={
+            "sale":sale,
+            "saleId":sale.id,
+            "items":items,
+            "cliente":sale.client.name
+            }
+    template_path = 'sale/pdfprint.html'
+    context = data
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="sale.pdf"'
+    template = get_template(template_path)
+    html = template.render(context)
 
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funy view
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
