@@ -3,7 +3,7 @@ from django.urls import path
 
 #import 
 from crm.views.client.views import clientList, clientCreate,clientEdit,clientDelete
-from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,pdfPrint,saleNew
+from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,pdfPrint,saleNew,saleLast
 from crm.views.devolution.views import devolutionList, devolutionEdit, devolutionDelete, devolutionCreate,devolutionInicia,devolutionItemView,devolutionGetData,devolutionItemDelete,devpdfPrint,devolutionNew
 
 
@@ -25,6 +25,7 @@ urlpatterns=[
         path('sale/itemview',saleItemView,name='saleItemView'),
         path('sale/itemdelete/<int:pk>/',saleItemDelete,name='saleItemDelete'),
         path('sale/pdfprint/<int:pk>/',pdfPrint,name='pdfPrint'),
+        path('sale/last',saleLast,name='saleLast'),
 
         path('devolution/list',devolutionList,name='devolutionList'),
         path('devolution/new',devolutionNew,name='devolutionNew'),
