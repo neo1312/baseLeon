@@ -22,3 +22,18 @@
         </div>
 {%endblock%}
 
+{% block dateFilter %}
+<div class="card-footer">
+    <!-- Date Filter Form -->
+    <form method="get" action="{% url 'crm:saleList' %}" class="mt-3 d-flex align-items-center">
+        <label for="start_date" class="me-2">Fecha Inicial: </label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date|default_if_none:'' }}" class="form-control me-2" style="width: auto;">
+        
+        <label for="end_date" class="me-2">Fecha Final:  </label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date|default_if_none:'' }}" class="form-control me-2" style="width: auto;">
+        
+        <button type="submit" class="btn btn-primary">Filtrar </button>
+    </form>
+</div>
+{% endblock %}
+

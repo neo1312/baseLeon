@@ -9,6 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 #import 
 from crm.models import Sale,Client ,Product,saleItem
 from crm.forms import saleForm 
+from django.utils.dateparse import parse_date
+from datetime import datetime, timedelta
 
 @csrf_exempt
 def saleInicia(request):
@@ -21,19 +23,39 @@ def saleInicia(request):
         sale.save()
     return JsonResponse('Venta Registrada',safe=False)
 
+
+
 @csrf_exempt
 def saleList(request):
+    sales = Sale.objects.all()
+
+    # Get and parse date filter inputs
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    start_date = parse_date(start_date_str) if start_date_str else None
+    end_date = parse_date(end_date_str) if end_date_str else None
+
+    # Extend end_date to the end of the day
+    if end_date:
+        end_date = datetime.combine(end_date, datetime.max.time())
+
+    # Apply date range filter if dates are valid
+    if start_date and end_date:
+        sales = sales.filter(date_created__range=(start_date, end_date))
+
     data = {
-            'sale_create':'/sale/create',
-            'title' : 'Listado sales',
-            'sales' : Sale.objects.all(),
-            'entity':'Crear Nueva Venta',
-            'url_create':'/sale/create',
-            'url_js':'/static/lib/java/sale/list.js',
-            'btnId':'btnOrderList',
-            'entityUrl':'/sale/new',
-            'home':'home',
-            }
+        'sale_create': '/sale/create',
+        'title': 'Listado sales',
+        'sales': sales,
+        'entity': 'Crear Nueva Venta',
+        'url_create': '/sale/create',
+        'url_js': '/static/lib/java/sale/list.js',
+        'btnId': 'btnOrderList',
+        'entityUrl': '/sale/new',
+        'home': 'home',
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+    }
     return render(request, 'sale/list.html', data)
 
 @csrf_exempt
@@ -59,7 +81,7 @@ def saleDelete(request,pk):
     sale=Sale.objects.get(id=pk)
     if request.method == 'POST':
         sale.delete()
-        return redirect ( '/sale/list')
+        return redirect ( '/sale/new')
 
     context = {
             'item':sale,

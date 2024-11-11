@@ -112,21 +112,20 @@ def devolutionItemView(request):
             margen=product.margen
         
         stockActual=(Product.objects.get(id=pk)).stock
-        if float(quantity) > stockActual:
-            return JsonResponse('No hay stock suficiente', safe=False)
+#        if float(quantity) > stockActual:
+#            return JsonResponse('No hay stock suficiente', safe=False)
+        itemsdevolution=devolution.devolutionitem_set.all()
+        outputlist=list(filter(lambda x:x.product.id==pk,itemsdevolution))
+        print(stockActual)
+        if outputlist:
+            repetido=outputlist[0]
+            quantity=int(repetido.quantity)+int(quantity)
+            devolutionItem.objects.filter(id=repetido.id).delete()
+            devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
+            return JsonResponse('se sumaron',safe=False)
         else:
-            itemsdevolution=devolution.devolutionitem_set.all()
-            outputlist=list(filter(lambda x:x.product.id==pk,itemsdevolution))
-            print(stockActual)
-            if outputlist:
-                repetido=outputlist[0]
-                quantity=int(repetido.quantity)+int(quantity)
-                devolutionItem.objects.filter(id=repetido.id).delete()
-                devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
-                return JsonResponse('se sumaron',safe=False)
-            else:
-                devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
-                return JsonResponse('creo nuevo registro',safe=False)
+            devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
+            return JsonResponse('creo nuevo registro',safe=False)
 
 @csrf_exempt
 def devolutionItemDelete(request,pk):

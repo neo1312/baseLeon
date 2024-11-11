@@ -78,11 +78,13 @@ class Product(models.Model):
     margenGranel= models.CharField(max_length=100, verbose_name='margenGranel',default=0)
     unidad= models.CharField(max_length=100, verbose_name='unidad',default="Pieza",choices=unidad_choices)
     unidadEmpaque= models.CharField(max_length=100, verbose_name='unidadEmpaque',default="1")
-
+    monedero_percentaje= models.CharField(max_length=100, verbose_name='monedero%',default=0.00)
+    
     #foreing Fields
     category = models.ForeignKey(Category, on_delete=models.SET_NULL,null=True)
     provedor =models.ForeignKey('scm.Provider', on_delete=models.CASCADE,null=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL,null=True)
+    inventory_no = models.IntegerField(default=1)
 
   #utility fields
     date_created = models.DateTimeField(blank=True, null=True)

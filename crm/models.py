@@ -142,8 +142,7 @@ class saleItem(models.Model):
         total=round(total1,2)
         return total
 
-@receiver(post_save, sender=saleItem)
-def OrderItemSignal(sender,instance,**kwargs):
+"""def OrderItemSignal(sender,instance,**kwargs):
     producto_id=instance.product.id
     producto=Product.objects.get(pk=producto_id)
     cantidad= float(producto.stock)-float(instance.quantity)
@@ -152,7 +151,8 @@ def OrderItemSignal(sender,instance,**kwargs):
     clientId=instance.sale.client.id
     cliente=Client.objects.get(id=clientId)
     if instance.sale.monedero==False:
-        cliente.monedero=instance.get_total*0.035+float(cliente.monedero)
+        monedero_percentaje=float(producto.monedero_percentaje)
+        cliente.monedero=instance.get_total*monedero_percentaje+float(cliente.monedero)
         cliente.save()
     else:
         if instance.get_total >= instance.sale.client.monedero:
@@ -160,7 +160,40 @@ def OrderItemSignal(sender,instance,**kwargs):
             cliente.save()
         else:
             cliente.monedero=float(cliente.monedero)-instance.get_total
+            cliente.save()"""
+@receiver(post_save, sender=saleItem)
+def OrderItemSignal(sender, instance, **kwargs):
+    # Check if the product exists
+    if instance.product:
+        producto_id = instance.product.id
+        producto = Product.objects.get(pk=producto_id)
+        
+        # Update stock
+        cantidad = float(producto.stock) - float(instance.quantity)
+        producto.stock = cantidad
+        producto.save()
+    else:
+        logger.warning("saleItem instance has no associated product: %s", instance)
+
+    # Check if the sale and client exist
+    if instance.sale and instance.sale.client:
+        clientId = instance.sale.client.id
+        cliente = Client.objects.get(id=clientId)
+
+        if instance.sale.monedero == False:
+            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
             cliente.save()
+        else:
+            if instance.get_total >= cliente.monedero:
+                cliente.monedero = 0
+                cliente.save()
+            else:
+                cliente.monedero = float(cliente.monedero) - instance.get_total
+                cliente.save()
+    else:
+        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+
 
 @receiver(pre_save, sender=saleItem)
 def OrderItemSignal(sender,instance,**kwargs):
@@ -168,15 +201,19 @@ def OrderItemSignal(sender,instance,**kwargs):
 
 @receiver(post_delete, sender=saleItem)
 def OrderItemSignal(sender,instance,**kwargs):
-    producto_id=instance.product.id
-    producto=Product.objects.get(pk=producto_id)
-    cantidad= float(producto.stock)+float(instance.quantity)
-    producto.stock=cantidad
-    producto.save()
-    clientId=instance.sale.client.id
-    cliente=Client.objects.get(id=clientId)
-    cliente.monedero=float(cliente.monedero)-instance.get_total*0.035
-    cliente.save()
+    if instance.product is not None:
+        producto_id=instance.product.id
+        producto=Product.objects.get(pk=producto_id)
+        cantidad= float(producto.stock)+float(instance.quantity)
+        producto.stock=cantidad
+        producto.save()
+        clientId=instance.sale.client.id
+        cliente=Client.objects.get(id=clientId)
+        monedero_percentaje=float(producto.monedero_percentaje)
+        cliente.monedero=float(cliente.monedero)-instance.get_total*monedero_percentaje
+        cliente.save()
+    else:
+        print(f"SaleItem ID {instance.id} has not associated product.")
 
 class Devolution(models.Model):
     

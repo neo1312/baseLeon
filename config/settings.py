@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-)hayf4#@e=03)hkka-f#74ur(cvcz0o#!)6a6fqhv#zdz0&q9r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.135','0.0.0.0','127.0.0.1']
+ALLOWED_HOSTS = ['192.168.1.135','0.0.0.0','127.0.0.1','134.209.74.186']
 
 
 # Application definition
@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES =db.SQLITE
+DATABASES =db.POSTGRESQL
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
