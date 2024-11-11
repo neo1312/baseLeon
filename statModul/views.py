@@ -19,14 +19,16 @@ def reportSale(request):
 def getData(request):
     if request.method == 'POST':
         call=json.loads(request.body)
-        date=call['date']
-        day=datetime.datetime.strptime(date,"%Y-%m-%d")
-       
-        ventasList=Sale.objects.all()
-        filtro=list(filter(lambda x:x.date_created.date()==day.date(),ventasList))
-        ventas=list(map(lambda x:x.get_cart_total,filtro))
+        fecha=call['date']
+        diaHora=datetime.datetime.strptime(fecha,"%Y-%m-%d")
+        dia=diaHora.date()
+        salesList=Sale.objects.all()
+        filtro=list(filter(lambda x:x.date_created.date()==dia,salesList))
+        ultimaVta=str(filtro[-1])
+        primeraVta=str(filtro[0])
+        salesDay=list(map(lambda x:x.get_cart_total,filtro))
         ventas_cost=list(map(lambda x:x.get_cart_total_cost,filtro))
-        total_venta=reduce(lambda x,y:x+y,ventas)
+        total_venta=reduce(lambda x,y:x+y,salesDay)
         total_venta_c=reduce(lambda x,y:x+y,ventas_cost)
         
         devolutionsList=Devolution.objects.all()
@@ -34,7 +36,7 @@ def getData(request):
             total_devolution=0
             total_devolution_c=0
         else:
-            filtro=list(filter(lambda x:x.date_created.date()==day.date(),devolutionsList))
+            filtro=list(filter(lambda x:x.date_created.date()==dia,devolutionsList))
             if bool(filtro)==False:
                 total_devolution=0
                 total_devolution_c=0
@@ -61,8 +63,15 @@ def getData(request):
         else:
             totalAplicado=0
 
-        print('Monedero Aplicado: ${}'.format(round(totalAplicado,2)))
-        print("Monedero Otorgado ${}".format(round(monederoFinal,2)))
-        print("total de venta:${}".format(total_venta-total_devolution))
-        print("total de costo de ventas:${}".format(total_venta_c-total_devolution_c))
-        return JsonResponse({'date':date},safe=False)
+            fApl=round(totalAplicado,2)
+            fOrt=round(monederoFinal,2)
+            fVen=round(total_venta-total_devolution,2)
+            fCost=round(total_venta_c-total_devolution_c,2)
+
+            name=[fApl,fOrt,fVen,fCost]
+
+        print('Monedero Aplicado: $',fApl)
+        print("Monedero Otorgado $", fOrt)
+        print("total de venta:$",fVen)
+        print("total de costo de ventas:$",fCost)
+        return JsonResponse({'date':name,'ventas':[primeraVta,ultimaVta]},safe=False)
