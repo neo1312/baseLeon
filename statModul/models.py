@@ -1,3 +1,5 @@
 from django.db import models
 
-# Create your models here.
+class PageCounter(models.Model):
+    count = models.PositiveIntegerField(default=1)
+

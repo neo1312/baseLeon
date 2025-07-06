@@ -13,15 +13,15 @@ from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
 
 @csrf_exempt
-def saleInicia(request):
-    if request.method == "POST":
-        call=json.loads(request.body)
-        clienteId=int(call['id'])
-        monedero=call['monedero']
-        cliente=Client.objects.get(id=clienteId)
-        sale=Sale.objects.create(client=cliente,monedero=monedero)
-        sale.save()
-    return JsonResponse('Venta Registrada',safe=False)
+def saleCreateNew(request):
+    data = {
+            'product_create':'/product/create',
+            'title' : 'Listado products',
+            'products' : Product.objects.all(),
+            'entity':'products',
+            'url_create':'/product/create',
+            }
+    return render(request, 'sale/createnew.html', data)
 
 
 
@@ -92,15 +92,19 @@ def saleDelete(request,pk):
     return render(request,  'sale/delete.html',context)
 
 @csrf_exempt
-def saleCreate(request):
-    sale=Sale.objects.last()
+def saleCreate(request, sale_id):
+    sale = get_object_or_404(Sale, id=sale_id)
     items=sale.saleitem_set.all()
+    total = sale.get_cart_total 
     context={
+            'sale': sale,
             'url_js':'/static/lib/java/sale/create.js',
             'items':items,
-            'total':sale,
-            'returnCreate':'/sale/new'
+            'total':total,
+            'returnCreate':'/sale/new',
+            'default_client_id':int("1")
             }
+    print (total)
     return render(request, 'sale/create.html',context)
 
 @csrf_exempt
@@ -117,10 +121,26 @@ def saleGetData(request):
         return JsonResponse({'datos':name},safe=False)
 
 @csrf_exempt
+def saleInicia(request):
+    if request.method == 'POST':
+        call= json.loads(request.body)
+        clientId=int(call['id'])
+        cliente=Client.objects.get(id=clientId)
+        monedero=call['monedero']
+        print (clientId)
+        print (monedero)
+        sale=Sale.objects.create(client=cliente,monedero=monedero)
+        sale.save()
+        print(sale.id)
+        return JsonResponse({'datos':sale.id},safe=False)
+
+
+
+@csrf_exempt
 def saleItemView(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        sale=Sale.objects.last()
+        sale=Sale.objects.first()
         pk=int(data[0])
         quantity=data[1]
         product=Product.objects.get(id=pk)
@@ -158,20 +178,17 @@ def saleItemView(request):
 
 @csrf_exempt
 def saleItemDelete(request,pk):
-    item=saleItem.objects.get(id=pk)
-    if request.method == 'POST':
+    if request.method == "DELETE":
+        item = get_object_or_404(saleItem, id=pk)
         item.delete()
-        return redirect ( '/sale/create')
-    context = {
-            'item':item,
-            'title' : 'item Delete',
-            'entity':'orders',
-            'retornoLista':'/sale/list',
-            }
-    return render(request,  'sale/delete.html',context)
+        sale=item.sale
+        cart_total = sale.get_cart_total
+        return JsonResponse({'success':True, 'message':'Item deleted succesfully.','cart_total':cart_total})
+    return JsonResponse({'success':False, 'message':'invalid request method.'})
+
 
 @csrf_exempt
-def pdfPrint(request,pk):
+def salepdfPrint(request,pk):
     sale=Sale.objects.get(id=pk)
 
     items=sale.saleitem_set.all()
@@ -179,7 +196,8 @@ def pdfPrint(request,pk):
             "sale":sale,
             "saleId":sale.id,
             "items":items,
-            "cliente":sale.client.name
+            "cliente":sale.client.name,
+            "detalle":"Venta"
             }
     template_path = 'sale/pdfprint.html'
     context = data
@@ -198,16 +216,20 @@ def pdfPrint(request,pk):
 
 @csrf_exempt
 def saleNew(request):
+    clients = Client.objects.all()
+    default_client_id=1
     data = {
             'sale_create':'/sale/create',
             'title' : 'Alta de ventas',
             'entity':'lista de ventas',
             'entityUrl':'/sale/list',
-            'url_create':'/sale/create',
+            'url_create':'',
             'url_js':'/static/lib/java/sale/list.js',
             'btnId':'btnOrderList',
             'newBtn':'Venta',
-            'home':'home'
+            'home':'home',
+            'clients':clients,
+            'default_client_id':default_client_id
             }
     return render(request, 'sale/new.html', data)
 
@@ -219,10 +241,7 @@ def saleLast(request):
             "sale":sale,
             "saleId":sale.id,
             "items":items,
-            "cliente":sale.client.name
             }
-    template_path = 'sale/pdfprint.html'
-    context = data
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="sale.pdf"'
     template = get_template(template_path)

@@ -4,11 +4,11 @@
     <tr>
         <th scope="col">BarCode</th>
         <th scope="col">pv1</th>
+        <th scope="col">Categoria</th>
         <th scope="col">Name</th>
         <th scope="col">Marca</th>
         <th scope="col">Price</th>
         <th scope="col">PriceGranel</th>
-        <th scope="col">UnidadGranel</th>
         <th scope="col">Minimo</th>
         <th scope="col">Stock</th>
 	<!-- <th scope="col">Opciones</th> -->
@@ -20,11 +20,11 @@
         <tr>
             <td>{{ c.barcode}}</td>
             <td>{{ c.pv1}}</td>
+            <td>{{ c.category}}</td>
             <td>{{ c.name }}</td>
             <td>{{ c.brand}}</td>
             <td>${{ c.priceLista}}</td>
             <td>$ {{ c.priceListaGranel}}</td>
-            <td>{{ c.unidad}}</td>
             <td>{{ c.minimo}}</td>
             <td>{{ c.stock}}</td>
 <!--            <td>

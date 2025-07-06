@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:13
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_USER} 
+      POSTGRES_USER: ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"   # Expose Postgres on host port 5433
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8002:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED}
+
+volumes:
+  postgres_data:

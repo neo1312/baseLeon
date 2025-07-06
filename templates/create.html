@@ -52,7 +52,7 @@
                 <div class="card-body">
                 <form class="row">
                                 <div class="form-outline col-md-10 autocomplete">
-                                    <input type="number" step=".01" id="totalFactura" class="form-control" min="0" readonly=readonly tabindex="-1" value="{{total.get_cart_total|floatformat:2}}" />
+                                    <input type="number" step=".01" id="totalFactura" class="form-control" min="0" readonly=readonly tabindex="-1" value="{{total|floatformat:2}}" />
   <ul  class="autocomplete-result">
   </ul>
                                 </div>
@@ -136,8 +136,9 @@
             $('#data').DataTable({
                 responsive: true,
                 autoWidth: false,
-                 pageLength : 5,
-                 lengthMenu: [[5, 10, 20, -1], [5, 10, 20, 'Todos']]
+                pageLength : 100,
+                lengthMenu: [[5, 10, 20, -1], [5, 10, 20, 'Todos']],
+		order:[[1,'asc']] 
             });
         });
     </script>

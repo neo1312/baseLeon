@@ -1,1 +1,29 @@
-*/__pycache__/*
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+env/
+venv/
+
+# Django stuff
+db.sqlite3
+*.log
+media/
+staticfiles/
+
+# Environment variables
+.env
+
+# Docker overrides and cache
+docker-compose.override.yml
+*.dockerignore
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+

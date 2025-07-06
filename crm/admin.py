@@ -21,9 +21,11 @@ class saleResource(resources.ModelResource):
 
 class saleAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=('id',)
-    list_filter=('client','tipo')
+    list_filter=('client','tipo','monedero')
     resource_class=saleResource
-    list_display=('id','client','tipo')
+    list_display=('id','client','get_cart_total','monedero')
+    ordering = ('id','date_created')
+    date_hierarchy='date_created'
 
 admin.site.register(Sale,saleAdmin)
 
@@ -35,7 +37,7 @@ class saleItemAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=('id',)
     list_filter=('sale',)
     resource_class=saleItemResource
-    list_display=('id','sale','product')
+    list_display=('id','sale','product','date_created')
 
 admin.site.register(saleItem,saleItemAdmin)
 

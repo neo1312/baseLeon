@@ -20,12 +20,13 @@
             <td>$ {{ o.get_cart_total|floatformat:2 }}</td>
             <td>{{ o.date_created }}</td>
             <td>
-                <a href="/sale/edit/{{ o.id }}" class="btn btn-warning btn-xs btn-flat">
+<!--                <a href="/sale/edit/{{ o.id }}" class="btn btn-warning btn-xs btn-flat">
                     <i class="fas fa-edit"></i>
-                </a>
+</a> 
                 <a href="/sale/delete/{{ o.id }}" class="btn btn-danger btn-xs btn-flat">
                     <i class="fas fa-trash-alt"></i>
                 </a>
+		-->
                 <a href="/sale/pdfprint/{{ o.id }}" class="btn btn-secondary btn-xs btn-flat">
                     <i class="fas fa-print"></i>
                 </a>

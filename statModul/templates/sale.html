@@ -28,21 +28,21 @@
                 <div class="card-body">
                     <form class="row" id="formDetalle">
                             <div class="form-group col-md-2" >
-                                <label for="">Costo_ventas:</label>
-                                <input type="number" class="form-control detalle" placeholder="costo" id="costo" min="0" readonly="readonly"/>
+                                <label for="">Ventas Brutas:</label>
+                                <input type="number" class="form-control detalle" placeholder="costo" id="ventasBrutas" min="0" readonly="readonly"/>
                             </div>
                             <div class="form-group col-md-2" >
-                                <label for="">Ventas:</label>
-                                <input type="number" class="form-control detalle" placeholder="ventas" id="ventas" min="0" readonly="readonly" tabindex="-1"/>
+                                <label for="">Devoluciones:</label>
+                                <input type="number" class="form-control detalle" placeholder="ventas" id="devoluciones" min="0" readonly="readonly" tabindex="-1"/>
                             </div>
                             <div class="form-group col-md-4">
                                 <label for="">Monedero usado:</label>
-                                <input id="usado" placeholder="Utilidad"class="form-control detalle" readonly="readonly" tabindex="-1">
+                                <input id="monederoUsado" placeholder="Utilidad"class="form-control detalle" readonly="readonly" tabindex="-1">
                             </div>
 
                             <div class="form-group col-md-4">
-                                <label for="">Monedero otorgado:</label>
-                                <input id="otorgado" placeholder="Utilidad"class="form-control detalle" readonly="readonly" tabindex="-1">
+                                <label for="">Ventas_Netas:</label>
+                                <input id="ventasNetas" placeholder="Utilidad"class="form-control detalle" readonly="readonly" tabindex="-1">
                             </div>
 
                     </form>
@@ -57,21 +57,21 @@
                 <div class="card-body">
                     <form class="row" id="formDetalle">
                             <div class="form-group col-md-2" >
-                                <label for="">Primera venta:</label>
-                                <input type="number" class="form-control detalle" placeholder="costo" id="primera" min="0" readonly="readonly"/>
+                                <label for="">Costo Bruto:</label>
+                                <input type="number" class="form-control detalle" placeholder="costo" id="costoBruto" min="0" readonly="readonly"/>
                             </div>
                             <div class="form-group col-md-2" >
-                                <label for="">Ultima venta:</label>
-                                <input type="number" class="form-control detalle" placeholder="ventas" id="ultima" min="0" readonly="readonly" tabindex="-1"/>
+                                <label for="">Costo Dev:</label>
+                                <input type="number" class="form-control detalle" placeholder="ventas" id="costoDev" min="0" readonly="readonly" tabindex="-1"/>
                             </div>
                             <div class="form-group col-md-4">
-                                <label for="">:</label>
-                                <input id="" placeholder=""class="form-control detalle" readonly="readonly" tabindex="-1">
+                                <label for="">:Monedero Otorgado</label>
+                                <input id="monederoOtorgado" placeholder=""class="form-control detalle" readonly="readonly" tabindex="-1">
                             </div>
 
                             <div class="form-group col-md-4">
-                                <label for="">:</label>
-                                <input id="" placeholder=""class="form-control detalle" readonly="readonly" tabindex="-1">
+                                <label for="">Costo Neto:</label>
+                                <input id="costoNeto" placeholder=""class="form-control detalle" readonly="readonly" tabindex="-1">
                             </div>
 
                     </form>
@@ -89,17 +89,16 @@
 <div class="col-md-6">
 <div class="card card-danger">
 <div class="card-header">
-<h3 class="card-title">Input masks</h3>
+<h3 class="card-title">Inventory</h3>
 </div>
 <div class="card-body">
 
 <div class="form-group">
-<label>Date masks:</label>
-<div class="input-group">
+<label>Total Inventory Value:</label>
+<div class="input-group" id="">
 <div class="input-group-prepend">
-<span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+<input type="number" class="form-control detalle" placeholder="$$$" id="total_value" min="0" readonly="readonly"/>
 </div>
-<input type="text" class="form-control" data-inputmask-alias="datetime" data-inputmask-inputformat="dd/mm/yyyy" data-mask>
 </div>
 
 </div>

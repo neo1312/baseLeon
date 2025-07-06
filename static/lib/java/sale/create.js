@@ -51,7 +51,7 @@ const traerData = (valorBtn)=>{
 //resgistrar orderItems
 btnAdd.addEventListener("click",(e)=>{
     e.preventDefault();
-    let quantity= document.getElementById("quantity")
+    quantity= document.getElementById("quantity")
     let codigo= document.getElementById("codigo")
     codigo=codigo.value
     quantity=quantity.value
@@ -61,6 +61,7 @@ btnAdd.addEventListener("click",(e)=>{
 
 
 const registrarItem= (codigo,quantity)=>{
+ console.log("heeeY")
     let url = "/sale/itemview"
     fetch(url,{
         method:'POST',
@@ -80,9 +81,35 @@ const registrarItem= (codigo,quantity)=>{
 			alert('No hay suficiente stock')
 		}
 		else{
-			console.log('naaaaaa')
+			console.log('hubo errooor')
 			location.reload()
 		} 
         })
 }
+
+//delete sale items
+document.querySelectorAll('.deleteButton').forEach(button => {
+	button.addEventListener('click', function (){
+		const itemId = this.getAttribute('data-item-id');
+		console.log(itemId)
+
+		fetch(`/sale/itemdelete/${itemId}/`,{
+			method: 'DELETE',
+			headers:{
+			'Content-Type':'application/json',
+            		'X-CSRFToken':csrftoken,
+			}
+		})
+		.then(response => response.json())
+			.then(data => {
+				if(data.success){
+				alert (data.message);
+				document.getElementById(`item-${itemId}`).remove();
+				totalFactura.value = data.cart_total
+				}else{
+					alert(data.message || "failed");
+				}
+			})
+			})
+})
 }

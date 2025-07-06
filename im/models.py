@@ -37,7 +37,7 @@ class Category(models.Model):
     last_updated = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return '{} {}'.format(self.id, self.name)
+        return '{}'.format(self.name)
 
     def save(self, *args, **kwargs):
             if self.date_created is None:
@@ -72,7 +72,7 @@ class Product(models.Model):
     pv1 = models.CharField(unique=True,max_length=100)
     margen= models.CharField(max_length=100, verbose_name='margen',default=0)
     margenMayoreo= models.CharField(max_length=100, verbose_name='margenMayoreo',default=0.05)
-    costo= models.CharField(max_length=100,verbose_name='costo',default=0)
+    costo= models.DecimalField(max_digits=14,default=0.000000,decimal_places=6)
     granel= models.BooleanField(verbose_name='granel',default=False)
     minimo= models.PositiveIntegerField(verbose_name='minimo',default=0)
     margenGranel= models.CharField(max_length=100, verbose_name='margenGranel',default=0)
@@ -106,6 +106,12 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         ordering = ['brand']
+
+    #to get the total inventory on the admin side.
+    @classmethod
+    def total_inventory_value(cls):
+        from django.db.models import Sum, F
+        return cls.objects.aggregate(total_value=Sum(F('stock') * F('costo')))['total_value'] or 0
 
     @property
     def priceLista(self):
@@ -147,6 +153,9 @@ class Product(models.Model):
         else:
             a='no'
         return a
+    @property
+    def monedero(self):
+        return round((float(self.margen) * float(0.076)),4)
 
 
 
