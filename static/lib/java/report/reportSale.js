@@ -2,12 +2,15 @@ window.onload=function(){
 
 const consultaBtn=document.getElementById('consultar')
 const date=document.getElementById('fecha')
-const formVentas=document.getElementById('ventas')
-const formCostoVentas=document.getElementById('costo')
-const formMonederoUsado=document.getElementById('usado')
-const formMonederoOtorgado=document.getElementById('otorgado')
-const formPrimeraVenta=document.getElementById('primera')
-const formUltimaVenta=document.getElementById('ultima')
+const formventasBrutas=document.getElementById('ventasBrutas')
+const devoluciones=document.getElementById('devoluciones')
+const ventasNetas=document.getElementById('ventasNetas')
+const costoBruto=document.getElementById('costoBruto')
+const costoDev=document.getElementById('costoDev')
+const costoNeto=document.getElementById('costoNeto')
+const monederoUsado=document.getElementById('monederoUsado')
+const monederoOtorgado=document.getElementById('monederoOtorgado')
+const total_value=document.getElementById('total_value')
 
 	consultaBtn.addEventListener("click",(e)=>{
 		e.preventDefault();
@@ -30,12 +33,15 @@ const formUltimaVenta=document.getElementById('ultima')
 			})
 		        .then((data)=>{
 				console.log('data',data)
-				formVentas.value=(data.date[2])
-				formCostoVentas.value=(data.date[3])
-				formMonederoUsado.value=(data.date[0])
-				formMonederoOtorgado.value=(data.date[1])
-				formPrimeraVenta.value=(data.ventas[0])
-				formUltimaVenta.value=(data.ventas[1])
+				formventasBrutas.value=(data.date[1])
+				devoluciones.value=(data.date[5])
+				ventasNetas.value=(data.date[3])
+				costoBruto.value=(data.date[2])
+				costoDev.value=(data.date[7])
+				costoNeto.value=(data.date[4])
+				monederoUsado.value=(data.date[0])
+				monederoOtorgado.value=(data.date[10])
+				total_value.value=(data.date[11])
 			})
 
 	}

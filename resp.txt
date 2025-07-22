@@ -1,0 +1,88 @@
+@receiver(pre_save, sender=saleItem)
+def OrderItemSignal(sender,instance,**kwargs):
+     # Check if the sale and client exist
+   if instance.sale and instance.sale.client:
+        clientId = instance.sale.client.id
+ receiver(pre_save, sender=saleItem)
+def OrderItemSignal(sender,instance,**kwargs):
+     # Check if the sale and client exist
+   if instance.sale and instance.sale.client:
+        clientId = instance.sale.client.id
+        cliente = Client.objects.get(id=clientId)
+        orderitems=instance.sale.saleitem_set.all()
+        item_ids = [item.product.id for item in orderitems]
+        product_id=instance.product.id
+        if product_id in item_ids:
+            print ("si esta")
+        else:
+            print ("no esta")
+        print (item_ids)
+
+        if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
+            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
+            cliente.save()
+        else:
+            if instance.get_total >= cliente.monedero:
+                cliente.monedero = 0
+                cliente.save()
+            else:
+                cliente.monedero = float(cliente.monedero) - instance.get_total
+                cliente.save()
+    else:
+        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+
+receiver(pre_save, sender=saleItem)
+def OrderItemSignal(sender,instance,**kwargs):
+     # Check if the sale and client exist
+   if instance.sale and instance.sale.client:
+        clientId = instance.sale.client.id
+        cliente = Client.objects.get(id=clientId)
+        orderitems=instance.sale.saleitem_set.all()
+        item_ids = [item.product.id for item in orderitems]
+        product_id=instance.product.id
+        if product_id in item_ids:
+            print ("si esta")
+        else:
+            print ("no esta")
+        print (item_ids)
+
+        if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
+            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
+            cliente.save()
+        else:
+            if instance.get_total >= cliente.monedero:
+                cliente.monedero = 0
+                cliente.save()
+            else:
+                cliente.monedero = float(cliente.monedero) - instance.get_total
+                cliente.save()
+    else:
+        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+
+       cliente = Client.objects.get(id=clientId)
+        orderitems=instance.sale.saleitem_set.all()
+        item_ids = [item.product.id for item in orderitems]
+        product_id=instance.product.id
+        if product_id in item_ids:
+            print ("si esta")
+        else:
+            print ("no esta")
+        print (item_ids)
+
+        if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
+            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
+            cliente.save()
+        else:
+            if instance.get_total >= cliente.monedero:
+                cliente.monedero = 0
+                cliente.save()
+            else:
+                cliente.monedero = float(cliente.monedero) - instance.get_total
+                cliente.save()
+    else:
+        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+
+

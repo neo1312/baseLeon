@@ -52,7 +52,7 @@ class Purchase(models.Model):
     class Meta:
         verbose_name='purchase'
         verbose_name_plural='purchases'
-        ordering = ['id']
+        ordering = ['-id']
 
     @property
     def get_cart_total(self):

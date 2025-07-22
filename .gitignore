@@ -1,1 +1,42 @@
 */__pycache__/*
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Virtual environments
+venv/
+env/
+ENV/
+*.env
+*.venv
+
+# Django stuff
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# VSCode
+.vscode/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Migrations (optional — only ignore if you don’t want to track them)
+# ** Uncomment the next line if you don't want migration files in git
+# */migrations/*.py
+# */migrations/__pycache__/
+
+# Docker
+*.pid
+*.tar
+*.bak
+*.swp
+docker-compose.override.yml
+

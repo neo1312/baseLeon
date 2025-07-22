@@ -9,7 +9,7 @@ def productList(request):
     data = {
             'product_create':'/product/create',
             'title' : 'Listado products',
-            'products' : Product.objects.all(),
+            'products' : Product.objects.filter(active=True),
             'entity':'products',
             'url_create':'/product/create',
             }

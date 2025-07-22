@@ -1,0 +1,27 @@
+{% extends 'create.html' %}
+
+{% block columns %}
+    <tr>
+        <th scope="col">Quantity</th>
+        <th scope="col">Description</th>
+        <th scope="col">P.Unit</th>
+        <th scope="col">P.total</th>
+        <th scope="col">Options</th>
+    </tr>
+{% endblock %}
+
+{% block rows %}
+    {% for p in items%}
+    <tr id="item-{{p.id}}">
+            <td>{{ p.quantity}}</td>
+            <td>{{ p.product}}</td>
+            <td>{{ p.precioUnitario|floatformat:3}}</td>
+            <td>{{ p.get_total|floatformat:2}}</td>
+            <td>
+		    <a href="#"  class="btn btn-danger btn-xs btn-flat  deleteButton" data-item-id="{{p.id}}">
+                            <i class="fas fa-trash-alt"></i>Delete</a> 
+            </td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+

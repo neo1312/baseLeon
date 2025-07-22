@@ -1,0 +1,47 @@
+{% extends 'new.html' %}
+
+{%block botones%}
+
+<div class="form-group">
+   <label for="clientId">Seleccionar cliente</label>
+    <select class="form-select" id="clientId" name="clientId">
+        <option value="">Seleccione un cliente</option>
+        {% for client in clients %}
+	<option value="{{ client.id }}" >{{client.name}}</option>
+        {% endfor %}
+    </select>
+    <small class="form-text text-muted">Seleccione un cliente existente. Cliente por defecto: "Mostrador".</small>
+</div>
+ 
+
+
+<div class="form-group">
+<select class="form-select" aria-label="Default select example" id="btnMonedero">
+  <option value="0">No monedero</option>
+  <option value="1">compra con  monedero</option>
+</select>
+</div>
+
+{%endblock%}
+{%block lastBotones%}
+<div class="card-footer">
+		<a href="/quote/last" class="btn btn-success btn-flat" id="{{btnId}}">
+			<i class="fas fa-folder-open"></i>Ultima Cotizacion</a>
+        </div>
+{%endblock%}
+
+{% block dateFilter %}
+<div class="card-footer">
+    <!-- Date Filter Form -->
+    <form method="get" action="{% url 'crm:quoteList' %}" class="mt-3 d-flex align-items-center">
+        <label for="start_date" class="me-2">Fecha Inicial: </label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date|default_if_none:'' }}" class="form-control me-2" style="width: auto;">
+        
+        <label for="end_date" class="me-2">Fecha Final:  </label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date|default_if_none:'' }}" class="form-control me-2" style="width: auto;">
+        
+        <button type="submit" class="btn btn-primary">Filtrar </button>
+    </form>
+</div>
+{% endblock %}
+
