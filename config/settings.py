@@ -14,6 +14,9 @@ from pathlib import Path
 import os
 import config.db as db
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

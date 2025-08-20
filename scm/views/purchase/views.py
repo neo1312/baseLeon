@@ -125,8 +125,8 @@ def purchaseItemDelete(request,pk):
 
 def purchaseOrder(request,pk):
     query=Product.objects.filter(provedor=pk)
-    product=list(filter((lambda x:x.faltante != 'no'),query))
-    productFaltante=(filter((lambda x:x.faltante != 0),product))
+    product=list(filter((lambda x:x.faltante1 != 'no'),query))
+    productFaltante=(filter((lambda x:x.faltante1 != 0),product))
     response=HttpResponse(
             content_type='text/csv',
             )
@@ -134,7 +134,7 @@ def purchaseOrder(request,pk):
     writer.writerow(['unidad_empaque','Clave','Clave_Provedor','Descripcion','Cantidad','Costo'])
 
     for p in productFaltante:
-        writer.writerow([p.unidadEmpaque,p.id,p.pv1,p.name,p.faltante,float(p.costo)*float(p.unidadEmpaque)])
+        writer.writerow([p.unidadEmpaque,p.id,p.pv1,p.full_name,p.faltante1,float(p.costo)*float(p.unidadEmpaque)])
 
     response['Content-Disposition']='attachment; filename="productCost.csv"'
     return response

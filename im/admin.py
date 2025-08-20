@@ -21,13 +21,14 @@ class productResource(resources.ModelResource):
         model=Product
 
 class productAdmin(ImportExportModelAdmin,admin.ModelAdmin):
-    search_fields=['name','category__name','brand__name','id','barcode','pv1','brand__name']
-    list_display=('id','full_name','stock','costo','priceLista','priceListaGranel','active')
-    list_filter=('provedor','brand','category')
+    search_fields=['name','category__name','brand__name','id','barcode','pv1']
+    list_display=('id','full_name','stock','costo','priceLista','priceListaGranel','active','sat')
+    list_filter=('active','brand','category')
     prepopulated_fields={'barcode':('id',)}
     resocurce_class = productResource
     ordering=('id','last_updated')
     raw_id_fields=('provedor','brand','category')
+    #list_per_page = 1000
 
 
     #Calculate total inventory value

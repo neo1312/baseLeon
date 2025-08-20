@@ -2,6 +2,7 @@
 
 {% block columns %}
     <tr>
+        <th scope="col">SAT</th>
         <th scope="col">BarCode</th>
         <th scope="col">pv1</th>
         <th scope="col">Name</th>
@@ -16,6 +17,7 @@
 {% block rows %}
     {% for c in products%}
         <tr>
+            <td>{{ c.sat}}</td>
             <td>{{ c.barcode}}</td>
             <td>{{ c.pv1}}</td>
             <td>{{ c.full_name}}</td>

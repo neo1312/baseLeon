@@ -112,12 +112,20 @@ def saleGetData(request):
     if request.method == 'POST':
         call= json.loads(request.body)
         pk=call['id']
-        qs=Product.objects.get(barcode=pk)
+
+        qs=Product.objects.filter(barcode=pk)
+
+        product=qs.filter(sat=False, stock__gt=0).first()
+        if not product:
+            product = qs.filter(sat=True).first()
+        if not product:
+            return JsonResponse({'error':'No valid product found'},status=404)
+
         sale=Sale.objects.last()
         if sale.tipo=='menudeo':
-            name = [qs.id,qs.name,qs.priceLista]
+            name = [product.id,product.name,product.priceLista]
         else:
-            name = [qs.id,qs.name,qs.priceLista]
+            name = [product.id,product.name,product.priceLista]
         return JsonResponse({'datos':name},safe=False)
 
 @csrf_exempt
@@ -145,6 +153,7 @@ def saleItemView(request):
         quantity=data[1]
         product=Product.objects.get(id=pk)
         cost=product.costo
+        sat=product.sat
         if sale.monedero == False:
             monedero = 0
         else:
@@ -170,10 +179,10 @@ def saleItemView(request):
                 repetido=outputlist[0]
                 quantity=int(repetido.quantity)+int(quantity)
                 saleItem.objects.filter(id=repetido.id).delete()
-                saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
+                saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero,sat=sat)
                 return JsonResponse('se sumaron',safe=False)
             else:
-                saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
+                saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero,sat=sat)
                 return JsonResponse('creo nuevo registro',safe=False)
 
 @csrf_exempt

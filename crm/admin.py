@@ -23,24 +23,28 @@ class saleAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=('id',)
     list_filter=('client','tipo','monedero')
     resource_class=saleResource
-    list_display=('id','client','get_cart_total','monedero')
+    list_display=('id','client','get_cart_total','monedero','date_created')
     ordering = ('id','date_created')
     date_hierarchy='date_created'
 
 admin.site.register(Sale,saleAdmin)
 
+# Import-export resource
 class saleItemResource(resources.ModelResource):
     class Meta:
         model = saleItem
 
-class saleItemAdmin(ImportExportModelAdmin,admin.ModelAdmin):
-    search_fields=('id',)
-    list_filter=('sale',)
-    resource_class=saleItemResource
-    list_display=('id','sale','product','date_created')
+# Admin for saleItem
+class saleItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = saleItemResource
+    list_display = ('id', 'sale', 'quantity','product', 'cost', 'date_created','sat')
+    ordering = ('id', 'date_created')
+    search_fields = ('id',)
+    date_hierarchy = 'date_created'
+    list_filter = ('sat',)  # ✅ Add custom filter here
 
-admin.site.register(saleItem,saleItemAdmin)
-
+# Register admin
+admin.site.register(saleItem, saleItemAdmin)
 class devolutionResource(resources.ModelResource):
     class Meta:
         model = Devolution 

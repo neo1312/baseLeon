@@ -84,8 +84,8 @@ class saleItem(models.Model):
     cost=models.CharField(null=True,blank=True,max_length=50)
     margen=models.CharField(max_length=100,verbose_name='margen',default=0)
     monedero=models.DecimalField(max_digits=9,decimal_places=2,default=0)
-
-    #utility fields
+    price=models.DecimalField(max_digits=9,decimal_places=2,default=0)
+    sat=models.BooleanField(default=False) #utility fields
     date_created = models.DateTimeField(blank=True, null=True)
     last_update = models.DateTimeField(blank=True, null=True)
 

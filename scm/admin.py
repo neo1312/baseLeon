@@ -11,21 +11,20 @@ class providerAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=('id','name')
     list_filter=()
     resource_class=providerResource
-    list_display=('id','name')
-    ordering=('name',)
 
 admin.site.register(Provider,providerAdmin)
 
 class purchaseResource(resources.ModelResource):
     class Meta:
         model = Purchase
+        
 
 class purchaseAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=('id',)
     list_filter=('provider',)
     resource_class=purchaseResource
     list_display=('id','provider','date_created')
-    ordering=('provider','date_created')
+    ordering=('date_created',)
     date_hierarchy='date_created'
 
 admin.site.register(Purchase,purchaseAdmin)

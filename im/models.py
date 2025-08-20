@@ -1,9 +1,10 @@
 #inventory/models.py
-
+from django.db.models import Sum
 from django.db import models
 from datetime import  timedelta, date
 from django.utils import timezone
 import math
+from django.db.models.functions import Lower
 
 class Brand(models.Model):
     id=models.AutoField(primary_key=True)
@@ -25,7 +26,7 @@ class Brand(models.Model):
     class Meta:
         verbose_name = 'brand'
         verbose_name_plural = 'brands'
-        ordering = ['name']
+        ordering = [Lower('name')]
 
 class Category(models.Model):
     #Basic Fields
@@ -64,13 +65,14 @@ class Product(models.Model):
 
     id=models.IntegerField(primary_key=True,verbose_name='id')
     active=models.BooleanField(default=True)
-    name=models.CharField(max_length=500,verbose_name='name',unique=True)
-    barcode=models.CharField(max_length=500,verbose_name='barcode',unique=True)
+    sat=models.BooleanField(default=False)
+    name=models.CharField(max_length=500,verbose_name='name')
+    barcode=models.CharField(max_length=500,verbose_name='barcode')
     stock=models.PositiveIntegerField(default=0,verbose_name='existencia')
     stockMax=models.PositiveIntegerField(default=0,verbose_name='stockMaximo')
     stockMin=models.PositiveIntegerField(default=0,verbose_name='stockMinimo')
     #image = models.ImageField(upload_to='product/%Y/%m/%d', null=True, blank=True)
-    pv1 = models.CharField(unique=True,max_length=100)
+    pv1 = models.CharField(max_length=100)
     margen= models.CharField(max_length=100, verbose_name='margen',default=0)
     margenMayoreo= models.CharField(max_length=100, verbose_name='margenMayoreo',default=0.05)
     costo= models.DecimalField(max_digits=14,default=0.000000,decimal_places=6)
@@ -95,7 +97,9 @@ class Product(models.Model):
         return self.get_unidad_display()
 
     def __str__(self):
-        return '{}'.format( self.name)
+        return '{}'.format(self.name)
+
+
 
     def save(self, *args, **kwargs):
             if self.date_created is None:
@@ -107,11 +111,16 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         ordering = ['brand']
+        #constraints = [
+        #    models.UniqueConstraint(fields=['category', 'brand', 'name'], name='unique_product_full_name')
+        #]
+
     @property
     def full_name(self):
-        return f"{self.category.name} {self.brand.name} {self.name}"
-
-    #to get the total inventory on the admin side.
+        category_name = self.category.name if self.category else ''
+        brand_name = self.brand.name if self.brand else ''
+        return f"{category_name} {self.name} {brand_name}"
+       
     @classmethod
     def total_inventory_value(cls):
         from django.db.models import Sum, F
@@ -158,8 +167,32 @@ class Product(models.Model):
             a='no'
         return a
     @property
+    def faltante1(self):
+        totals=Product.objects.filter(barcode=self.barcode).aggregate(
+                total_stock=Sum('stock'),
+                total_stock_min=Sum('stockMin'),
+                total_stock_max=Sum('stockMax')
+                )
+        total_stock = totals['total_stock'] or 0
+        total_stock_min = totals['total_stock_min'] or 0
+        total_stock_max= totals['total_stock_max'] or 0
+
+        print(total_stock)
+        print(total_stock_min)
+        print(total_stock_max)
+
+        if total_stock <= total_stock_min:
+            a1=float(total_stock_max-total_stock)/float(self.unidadEmpaque)
+            a=math.ceil(a1)
+        else:
+            a='no'
+        return a
+    
+    @property
     def monedero(self):
         return round((float(self.margen) * float(0.076)),4)
+
+
 
 
 

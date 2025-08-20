@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save,post_delete
 from django.dispatch import receiver
 from im.models import Product
+from django.db.models.functions import Lower
 
 class Provider(models.Model):
     #Basic Files
@@ -26,7 +27,7 @@ class Provider(models.Model):
     class Meta:
         verbose_name = 'Provider'
         verbose_name_plural = 'Providers'
-        ordering=['name']
+        ordering=[Lower('name')]
 
 class Purchase(models.Model):
     #basic fields
