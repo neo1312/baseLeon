@@ -34,7 +34,7 @@ btnOrder.addEventListener('click',(e)=>{
 			arrayData=data.datos
 			console.log(arrayData)
 			const saleId = arrayData
-			window.location.href = `http://134.209.74.186:8000/sale/create/${saleId}/`
+			window.location.href = `/sale/create/${saleId}/`
 			})
 				      })
 			}		
