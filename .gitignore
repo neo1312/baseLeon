@@ -1,42 +1,84 @@
-*/__pycache__/*
+# -----------------------------
 # Python
+# -----------------------------
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
 *.egg
 *.egg-info/
-dist/
-build/
-*.log
+pip-wheel-metadata/
 
-# Virtual environments
-venv/
+# -----------------------------
+# Virtual Environments
+# -----------------------------
 env/
+venv/
 ENV/
 *.env
 *.venv
 
-# Django stuff
+# -----------------------------
+# Django
+# -----------------------------
+*.log
 *.sqlite3
 db.sqlite3
-media/
+
+# Static & media (generated)
 staticfiles/
+media/
 
-# VSCode
-.vscode/
-
-# OS-specific
-.DS_Store
-Thumbs.db
-
-# Migrations (optional — only ignore if you don’t want to track them)
-# ** Uncomment the next line if you don't want migration files in git
+# -----------------------------
+# Migrations (optional)
+# Uncomment if you DON'T want them in git
+# -----------------------------
 # */migrations/*.py
 # */migrations/__pycache__/
 
+# -----------------------------
+# Environment variables
+# -----------------------------
+.env
+.env.*
+*.env
+
+# -----------------------------
+# VS Code / IDE
+# -----------------------------
+.vscode/
+.idea/
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/
+*.log
+
+# -----------------------------
 # Docker
+# -----------------------------
 *.pid
 *.tar
 *.bak
 *.swp
 docker-compose.override.yml
 
+# -----------------------------
+# PostgreSQL (if local volume/files appear)
+# -----------------------------
+pgdata/
