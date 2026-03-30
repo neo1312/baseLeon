@@ -5,12 +5,17 @@ from django.http import JsonResponse,HttpResponse
 import json
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-import csv
+import csv, io
 from django.views.decorators.csrf import csrf_exempt
 
 #import 
 from scm.models import Purchase,Provider,Product,purchaseItem
 from scm.forms import purchaseForm 
+from io import TextIOWrapper
+from django.urls import reverse
+from django.db import IntegrityError
+from django.utils import timezone
+
 
 @csrf_exempt
 def purchaseInicia(request):
@@ -123,7 +128,43 @@ def purchaseItemDelete(request,pk):
             }
     return render(request,  'purchase/delete.html',context)
 
-def purchaseOrder(request,pk):
+
+def purchaseOrder(request, pk):
+    query = Product.objects.filter(provedor=pk)
+    product = list(filter(lambda x: x.faltante1 != 'no', query))
+    productFaltante = filter(lambda x: x.faltante1 != 0, product)
+
+    response = HttpResponse(content_type='text/csv')
+    writer = csv.writer(response)
+    writer.writerow(['cantidad', 'Clave', 'Descripcion', 'Empaque','Total','id','product', 'purchase','quantity','cost','date_created','last_update'])
+
+    seen_barcodes = set()  # Track unique products by barcode (pv1)
+
+    for p in productFaltante:
+        # Skip if we've already added this product based on barcode
+        if p.pv1 in seen_barcodes:
+            continue
+        seen_barcodes.add(p.pv1)
+
+        writer.writerow([
+            p.faltante1,
+            p.pv1,              # Barcode / Provider Key
+            p.full_name,
+            p.unidadEmpaque,
+            float(p.costo) * float(p.unidadEmpaque),
+            " ",
+            p.id,
+            " ",
+            float(p.faltante1)*float(p.unidadEmpaque),
+            p.costo,
+            " ",
+            " "
+        ])
+
+    response['Content-Disposition'] = 'attachment; filename="prodctCost.csv"'
+    return response
+
+"""def purchaseOrder(request,pk):
     query=Product.objects.filter(provedor=pk)
     product=list(filter((lambda x:x.faltante1 != 'no'),query))
     productFaltante=(filter((lambda x:x.faltante1 != 0),product))
@@ -137,7 +178,7 @@ def purchaseOrder(request,pk):
         writer.writerow([p.unidadEmpaque,p.id,p.pv1,p.full_name,p.faltante1,float(p.costo)*float(p.unidadEmpaque)])
 
     response['Content-Disposition']='attachment; filename="productCost.csv"'
-    return response
+    return response"""
 
 def purchaseNew(request):
     data = {
@@ -154,4 +195,143 @@ def purchaseNew(request):
             }
     return render(request, 'purchase/new.html', data)
 
+def upload_purchase_items(request):
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        csv_file = request.FILES["csv_file"]
+        data = []
+        headers = []
+
+        # Read CSV
+        csv_reader = csv.reader(TextIOWrapper(csv_file.file, encoding="utf-8"))
+        headers = next(csv_reader)
+        for row in csv_reader:
+            data.append(row)
+
+        # Render CSV preview table
+        html = render_to_string("purchase/csv_table.html", {
+            "headers": headers,
+            "data": data
+        })
+        return HttpResponse(html)
+
+    # First time load
+    return render(request, "purchase/create.html")
+
+
+def htmx_one(request):
+    return HttpResponse("<p>Hello from the server!</p>")
+
+def htmx_form(request):
+    name = request.POST.get('name','Anonymous')
+    return HttpResponse(f"<p>Hello, {name}! This came form HMTX form.</p>")
+
+def upload_csv(request):
+    return render(request, "purchase/upload_purchase_items.html")
+
+
+
+# ------------------------------
+# Helper para fechas del CSV
+# ------------------------------
+def parse_datetime_or_now(value):
+    """
+    Convierte valores vacíos a timezone.now().
+    Si la fecha viene en string válido, Django la convierte.
+    """
+    if value is None:
+        return timezone.now()
+    
+    value = str(value).strip()
+    if value == "":
+        return timezone.now()
+    
+    return value  # Django intentará convertirlo
+
+
+# ------------------------------
+# Vista: Subir CSV (solo lectura y preview)
+# ------------------------------
+def upload_csv_action(request):
+    file = request.FILES.get('csv')
+    if not file:
+        return HttpResponse('<div class="alert alert-danger">No file.</div>')
+
+    decoded = file.read().decode('latin1').replace('\x00', '')
+    lines = decoded.splitlines()
+    rows = list(csv.DictReader(lines))
+
+    request.session['csv_rows'] = rows
+
+    if not rows:
+        return HttpResponse('<div class="alert alert-warning">CSV is empty.</div>')
+
+    # Preview (primeras 3 filas)
+    preview_rows = rows[:3]
+    headers = list(rows[0].keys())[:3]  # mostrar solo primeras 3 columnas
+
+    html = '<div class="alert alert-info">Found {} rows in "{}".</div>'.format(
+        len(rows), file.name
+    )
+    html += '<table class="table table-sm table-bordered mt-3"><thead><tr>'
+
+    for h in headers:
+        html += '<th>{}</th>'.format(h)
+
+    html += '</tr></thead><tbody>'
+
+    for r in preview_rows:
+        html += '<tr>'
+        for h in headers:
+            html += '<td>{}</td>'.format(r.get(h, ''))
+        html += '</tr>'
+
+    html += '</tbody></table>'
+
+    # Botón para confirmar la importación
+    html += '''
+      <div class="mt-3">
+        <button class="btn btn-success" type="button"
+                hx-post="{}" hx-target="#upload-result">
+          Import these {} rows
+        </button>
+      </div>
+    '''.format(reverse('scm:uploadcsv_confirm'), len(rows))
+
+    return HttpResponse(html)
+
+
+# ------------------------------
+# Vista: Confirmar e importar CSV
+# ------------------------------
+def upload_csv_confirm(request):
+    rows = request.session.pop('csv_rows', [])
+    if not rows:
+        return HttpResponse('<div class="alert alert-danger">No data to import.</div>')
+
+    created_cnt = 0
+    for r in rows:
+        try:
+            pv1_value = r.get('pv1')
+            product = Product.objects.filter(pv1=pv1_value).first()
+            if not product:
+                continue
+
+            purchaseItem.objects.create(
+                id=int(r['id']),
+                product_id=product.id,
+                purchase_id=int(r['purchase']),
+                quantity=int(r['quantity']),
+                cost=r['cost'],
+                date_created=timezone.now(),
+                last_update=timezone.now(),
+            )
+            created_cnt += 1
+        except IntegrityError:
+            continue
+
+    return HttpResponse(
+        '<div class="alert alert-success">'
+        'Inserted {} new rows (duplicates skipped).'
+        '</div>'.format(created_cnt)
+    )
 

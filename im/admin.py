@@ -22,8 +22,8 @@ class productResource(resources.ModelResource):
 
 class productAdmin(ImportExportModelAdmin,admin.ModelAdmin):
     search_fields=['name','category__name','brand__name','id','barcode','pv1']
-    list_display=('id','full_name','stock','costo','priceLista','priceListaGranel','active','sat')
-    list_filter=('active','brand','category')
+    list_display=('id','full_name','stock','costo','priceLista','priceListaGranel','priceMayoreo','active','sat')
+    list_filter=('active','brand','category','provedor')
     prepopulated_fields={'barcode':('id',)}
     resocurce_class = productResource
     ordering=('id','last_updated')

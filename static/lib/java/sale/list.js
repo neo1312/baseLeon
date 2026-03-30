@@ -12,8 +12,10 @@ btnOrder.addEventListener('click',(e)=>{
 	console.log("client id from button click:")
 	console.log(clientId.value)
 	console.log(btnMonedero.value)
+	console.log(tipoVenta.value)
 	let client = clientId.value;
 	let monedero = btnMonedero.value;
+	let tipo = tipoVenta.value;
 	let url = "/sale/inicia"
 	
 	fetch(url,{
@@ -22,7 +24,7 @@ btnOrder.addEventListener('click',(e)=>{
 			'Content-Type':'application/json',
             		'X-CSRFToken':csrftoken,
 			},
-	   	body:JSON.stringify({'id':client,'monedero':monedero})
+		body:JSON.stringify({'id':client,'monedero':monedero,'tipo':tipo})
     			   })
 		.then((response)=>{
 			return response.json();

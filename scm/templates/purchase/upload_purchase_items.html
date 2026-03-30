@@ -1,0 +1,32 @@
+{%extends 'body.html'%}
+<!-- templates/upload_purchase_items.html -->
+{% block content%}
+
+<div class="container">
+	<div class="card">
+		<div class="card-header">
+			<h5>Upload CSV</h5>
+		</div>
+		<div class="card-body">
+			<form 
+		     		method="post"
+				enctype="multipart/form-data"
+				hx-post="{% url 'scm:uploadcsv_action'%}"
+				hx-target="#upload-result"
+				>
+				{% csrf_token%}
+				<input type="file" name="csv" class="form-controlmb-3">
+				<button type="submit" class="btn btn-primary">Upload</button>
+				<div id="upload-result"></div>
+
+
+			</form>
+
+		</div>
+
+	</div>
+
+</div>
+
+
+{% endblock%}

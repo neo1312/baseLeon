@@ -263,13 +263,24 @@ class quoteItem(models.Model):
 def OrderItemSignal(sender, instance, **kwargs):
     # Check if the product exists
     if instance.product:
-        producto_id = instance.product.id
-        producto = Product.objects.get(pk=producto_id)
-        
-        # Update stock
-        cantidad = float(producto.stock) - float(instance.quantity)
-        producto.stock = cantidad
-        producto.save()
+        barcode = instance.product.barcode
+        cantidad_solicitada=float(instance.quantity)
+        #Obtener los cproductos con el mismo codigo de barras
+        products_same= Product.objects.filter(barcode=instance.product.barcode).order_by('id')
+        product1=products_same.first() 
+        product2= products_same.last()
+        if product1.stock >= cantidad_solicitada:
+            nuevo_stock = product1.stock - cantidad_solicitada
+            product1.stock = nuevo_stock
+            product1.save()
+        else:
+            restante= cantidad_solicitada - product1.stock 
+            nuevo_stock2 = product2.stock - restante 
+            product1.stock = 0 
+            product2.stock = nuevo_stock2
+            product1.save()
+            product2.save()
+
     else:
         logger.warning("saleItem instance has no associated product: %s", instance)
 
@@ -278,7 +289,7 @@ def OrderItemSignal(sender, instance, **kwargs):
         clientId = instance.sale.client.id
         cliente = Client.objects.get(id=clientId)
         if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
-            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            monedero_percentaje = float(product1.monedero_percentaje) if instance.product else 0
             cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
             cliente.save()
 
@@ -404,6 +415,8 @@ class devolutionItem(models.Model):
     @property
     def precioUnitario(self):
         try:
+            if not self.product:
+                return 0
             cost = float(self.cost)
             margen = float(self.margen)
             total = 0  # Initialize total with a default value

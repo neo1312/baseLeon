@@ -11,6 +11,7 @@ const costoNeto=document.getElementById('costoNeto')
 const monederoUsado=document.getElementById('monederoUsado')
 const monederoOtorgado=document.getElementById('monederoOtorgado')
 const total_value=document.getElementById('total_value')
+const total_sat=document.getElementById('total_sat')
 
 	consultaBtn.addEventListener("click",(e)=>{
 		e.preventDefault();
@@ -42,6 +43,7 @@ const total_value=document.getElementById('total_value')
 				monederoUsado.value=(data.date[0])
 				monederoOtorgado.value=(data.date[10])
 				total_value.value=(data.date[11])
+				total_sat.value=(data.date[12])
 			})
 
 	}

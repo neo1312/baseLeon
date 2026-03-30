@@ -11,6 +11,7 @@ from crm.models import Sale,Client ,Product,saleItem
 from crm.forms import saleForm 
 from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
+from escpos.printer import File 
 
 @csrf_exempt
 def saleCreateNew(request):
@@ -121,11 +122,17 @@ def saleGetData(request):
         if not product:
             return JsonResponse({'error':'No valid product found'},status=404)
 
-        sale=Sale.objects.last()
+        sale=Sale.objects.first()
         if sale.tipo=='menudeo':
             name = [product.id,product.name,product.priceLista]
-        else:
-            name = [product.id,product.name,product.priceLista]
+            print("menudeo")
+            print(sale.id)
+            print(product.brand)
+        elif sale.tipo=='mayoreo' :
+            name = [product.id,product.name,product.priceMayoreo]
+            print("mayoreo")
+            print(sale.id)
+            print(product.brand)
         return JsonResponse({'datos':name},safe=False)
 
 @csrf_exempt
@@ -135,9 +142,10 @@ def saleInicia(request):
         clientId=int(call['id'])
         cliente=Client.objects.get(id=clientId)
         monedero=call['monedero']
+        tipo=call['tipo']
         print (clientId)
         print (monedero)
-        sale=Sale.objects.create(client=cliente,monedero=monedero)
+        sale=Sale.objects.create(client=cliente,monedero=monedero,tipo=tipo)
         sale.save()
         print(sale.id)
         return JsonResponse({'datos':sale.id},safe=False)
@@ -150,8 +158,10 @@ def saleItemView(request):
         data = json.loads(request.body)
         sale=Sale.objects.first()
         pk=int(data[0])
-        quantity=data[1]
         product=Product.objects.get(id=pk)
+        total_stock=product.stock
+        print(total_stock)
+        quantity=data[1]
         cost=product.costo
         sat=product.sat
         if sale.monedero == False:
@@ -167,14 +177,11 @@ def saleItemView(request):
                 margen=product.margenGranel
             else:
                 margen=product.margen
-        
-        stockActual=(Product.objects.get(id=pk)).stock
-        if float(quantity) > stockActual:
+        if float(quantity) > total_stock:
             return JsonResponse('No hay stock suficiente', safe=False)
         else:
             itemssale=sale.saleitem_set.all()
             outputlist=list(filter(lambda x:x.product.id==pk,itemssale))
-            print(stockActual)
             if outputlist:
                 repetido=outputlist[0]
                 quantity=int(repetido.quantity)+int(quantity)
@@ -195,8 +202,7 @@ def saleItemDelete(request,pk):
         return JsonResponse({'success':True, 'message':'Item deleted succesfully.','cart_total':cart_total})
     return JsonResponse({'success':False, 'message':'invalid request method.'})
 
-
-@csrf_exempt
+csrf_exempt
 def salepdfPrint(request,pk):
     sale=Sale.objects.get(id=pk)
 
@@ -222,6 +228,31 @@ def salepdfPrint(request,pk):
     if pisa_status.err:
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
     return response
+
+@csrf_exempt
+def sale_ticket_json(request, pk):
+    sale = Sale.objects.get(id=pk)
+    items = sale.saleitem_set.all()
+
+    data = {
+        "sale_id": sale.id,
+        "total":sale.get_cart_total,
+        "client": sale.client.name if sale.client else "Público en general",
+        "date": sale.date_created,
+        "items": [
+            {
+                "name": i.product.semi_full_name,
+                "price": float(i.precioUnitario),
+                "quantity": float(i.quantity),
+                "item_total":i.get_total
+            }
+            for i in items
+        ]
+    }
+
+    return JsonResponse(data)
+
+
 
 @csrf_exempt
 def saleNew(request):
@@ -263,3 +294,6 @@ def saleLast(request):
     if pisa_status.err:
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
     return response
+
+def print_ticket_view(request, pk):
+    return render(request, "sale/print_termal.html", {"sale_id": pk})

@@ -67,12 +67,12 @@ class Product(models.Model):
     active=models.BooleanField(default=True)
     sat=models.BooleanField(default=False)
     name=models.CharField(max_length=500,verbose_name='name')
-    barcode=models.CharField(max_length=500,verbose_name='barcode')
+    barcode=models.CharField(max_length=500,verbose_name='barcode',unique=True)
     stock=models.PositiveIntegerField(default=0,verbose_name='existencia')
     stockMax=models.PositiveIntegerField(default=0,verbose_name='stockMaximo')
     stockMin=models.PositiveIntegerField(default=0,verbose_name='stockMinimo')
     #image = models.ImageField(upload_to='product/%Y/%m/%d', null=True, blank=True)
-    pv1 = models.CharField(max_length=100)
+    pv1 = models.CharField(max_length=100,unique=True)
     margen= models.CharField(max_length=100, verbose_name='margen',default=0)
     margenMayoreo= models.CharField(max_length=100, verbose_name='margenMayoreo',default=0.05)
     costo= models.DecimalField(max_digits=14,default=0.000000,decimal_places=6)
@@ -111,16 +111,21 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         ordering = ['brand']
-        #constraints = [
-        #    models.UniqueConstraint(fields=['category', 'brand', 'name'], name='unique_product_full_name')
-        #]
+        constraints = [
+            models.UniqueConstraint(fields=['category', 'brand', 'name'], name='unique_product_full_name')
+        ]
 
     @property
     def full_name(self):
         category_name = self.category.name if self.category else ''
         brand_name = self.brand.name if self.brand else ''
         return f"{category_name} {self.name} {brand_name}"
-       
+    @property
+    def semi_full_name(self):
+        category_name = self.category.name if self.category else ''
+        brand_name = self.brand.name if self.brand else ''
+        return f"{category_name} {self.name} "
+
     @classmethod
     def total_inventory_value(cls):
         from django.db.models import Sum, F
@@ -128,6 +133,9 @@ class Product(models.Model):
 
     @property
     def priceLista(self):
+        if self.costo is None or self.margen is None:
+            return 0
+
         costo=float(self.costo)
         margen=float(self.margen)
         margeng=float(self.margenGranel)
@@ -140,9 +148,15 @@ class Product(models.Model):
             else:
                 precio=math.ceil((costo*(1+margen))*float(minimo))
         return precio
+    
+    @property
+    def priceMayoreo(self):
+        costo=float(self.costo)
+        margen=float(self.margenMayoreo)
+        precio=math.ceil((costo*(1+margen)))
+        return precio
 
     @property
-    
     def priceListaGranel(self):
         costo=float(self.costo)
         margen=float(self.margenGranel)

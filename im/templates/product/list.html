@@ -2,7 +2,6 @@
 
 {% block columns %}
     <tr>
-        <th scope="col">SAT</th>
         <th scope="col">BarCode</th>
         <th scope="col">pv1</th>
         <th scope="col">Name</th>
@@ -10,6 +9,7 @@
         <th scope="col">PriceGranel</th>
         <th scope="col">Minimo</th>
         <th scope="col">Stock</th>
+        <th scope="col">PriceMayoreo</th>
 	<!-- <th scope="col">Opciones</th> -->
     </tr>
 {% endblock %}
@@ -17,7 +17,6 @@
 {% block rows %}
     {% for c in products%}
         <tr>
-            <td>{{ c.sat}}</td>
             <td>{{ c.barcode}}</td>
             <td>{{ c.pv1}}</td>
             <td>{{ c.full_name}}</td>
@@ -25,6 +24,7 @@
             <td>$ {{ c.priceListaGranel}}</td>
             <td>{{ c.minimo}}</td>
             <td>{{ c.stock}}</td>
+            <td>{{ c.priceMayoreo}}</td>
 <!--            <td>
                     <a href="/product/edit/{{c.id}}" class="btn btn-warning btn-xs btn-flat">
                         <i class="fas fa-edit"></i></a>

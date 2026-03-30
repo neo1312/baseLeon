@@ -13,6 +13,7 @@ from django.db.models.functions import Random
 from .models import PageCounter
 import random
 from django.shortcuts import get_object_or_404
+from decimal import Decimal
 
 @csrf_exempt
 def reportSale(request):
@@ -32,6 +33,13 @@ def getData(request):
 #filtro de ventas del dia 
         salesList=Sale.objects.all()
         filtro_ventas=list(filter(lambda x:x.date_created.date()==dia,salesList))
+        total_sat = 0
+        for venta in filtro_ventas:
+            if venta.tipo == 'menudeo':
+                for item in venta.saleitem_set.all():
+                    if item.sat:
+                        total_sat += Decimal(item.quantity) * Decimal(item.cost)
+
         ultimaVta=str(filtro_ventas[-1])
         primeraVta=str(filtro_ventas[0])
         salesDay=list(map(lambda x:x.get_cart_total,filtro_ventas))
@@ -109,13 +117,14 @@ def getData(request):
         fCostNeto=round(total_venta_c-total_devolution_c,2)
     
 
-        name=[fApl,fVenBruto,fCostBruto,fVenNeto,fCostNeto,fDev,total_value,fDevCost,total_value_dev,total_sum_mon,fOtor,total_value_inventory]
+        name=[fApl,fVenBruto,fCostBruto,fVenNeto,fCostNeto,fDev,total_value,fDevCost,total_value_dev,total_sum_mon,fOtor,total_value_inventory,total_sat]
 
         print("monedero: $",fOtor)
         print('devoluciones: $',fDev)
         print('costo devoluciones: $',fDevCost)
         print("monedero_dev: $",total_value_dev )
         print("total ventas con monedero: $",total_sum_mon)
+        print("total sat: $",total_sat)
         return JsonResponse({'date':name,'ventas':[primeraVta,ultimaVta]},safe=False)
 
 def random_product_ids(request):

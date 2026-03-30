@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prueba Ticket</title>
+</head>
+<body>
+
+<h2>Imprimir ticket</h2>
+<button onclick="printSale(125)">🖨️ Imprimir venta 125</button>
+
+<script>
+async function printSale(saleId) {
+  try {
+    // 1️⃣ Llamada a tu endpoint Django
+    const response = await fetch(`http://134.209.74.186:8000/sale/sale_ticket_json/${saleId}`);
+    const sale = await response.json();
+
+    // 2️⃣ Construir texto del ticket
+    let ticket = '';
+    ticket += '*** FERRETERÍA EL POLI ***\n';
+    ticket += `Cliente: ${sale.client}\n`;
+    ticket += `Fecha: ${new Date(sale.date).toLocaleString()}\n`;
+    ticket += '------------------------------\n';
+    ticket += 'Producto                Cant  P.U.  Total\n';
+    ticket += '------------------------------\n';
+
+    sale.items.forEach(item => {
+      const name = item.name.substring(0, 22).padEnd(22, ' ');
+      const qty = item.quantity.toFixed(0).padStart(3, ' ');
+      const price = item.price.toFixed(2).padStart(6, ' ');
+      const total = item.item_total.toFixed(2).padStart(6, ' ');
+      ticket += `${name}${qty}${price}${total}\n`;
+    });
+
+    ticket += '------------------------------\n';
+    ticket += `TOTAL: $${sale.total.toFixed(2)}\n`;
+    ticket += '\nGracias por su compra\n\n\n';
+
+    // 3️⃣ Abre ventana e imprime
+    const printWindow = window.open('', '_blank', 'width=300,height=600');
+    printWindow.document.write('<pre style="font-family: monospace; font-size: 10px;">' + ticket + '</pre>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  } catch (error) {
+    console.error("Error al imprimir ticket:", error);
+  }
+}
+</script>
+
+</body>
+</html>
+
