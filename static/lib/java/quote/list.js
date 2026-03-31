@@ -32,7 +32,7 @@ btnOrder.addEventListener('click',(e)=>{
 			arrayData=data.datos
 			console.log(arrayData)
 			const quoteId = arrayData
-			window.location.href = `http://134.209.74.186:8000/quote/create/${quoteId}/`
+			window.location.href = `/quote/create/${quoteId}/`
 			})
 				      })
 			}		
