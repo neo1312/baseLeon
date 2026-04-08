@@ -5,6 +5,8 @@ import json
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+import logging
 
 #import 
 from crm.models import Sale,Client ,Product,saleItem

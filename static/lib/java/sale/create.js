@@ -147,16 +147,8 @@ const updateItemQuantity = (itemId, action) => {
 	.then(data => {
 		console.log(data);
 		if(data.success) {
-			if(data.deleted) {
-				// Item was deleted
-				document.getElementById(`item-${itemId}`).remove();
-				alert(data.message);
-			} else {
-				// Item quantity was updated
-				document.getElementById(`qty-${itemId}`).innerText = data.quantity;
-			}
-			// Update total
-			totalFactura.value = data.cart_total.toFixed(2);
+			// Reload page to refresh cart and inventory, same as registrarItem does
+			location.reload()
 		} else {
 			alert('Error: ' + (data.error || 'Unknown error'));
 		}
