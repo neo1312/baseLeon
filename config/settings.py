@@ -23,12 +23,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
-    'scm',
-    'im',
-    'crm',
-    'statModul',
-]
 
+    'scm.apps.ScmConfig',
+    'im.apps.ImConfig',
+    'crm.apps.CrmConfig',
+    'statModul.apps.StatmodulConfig',
+]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',

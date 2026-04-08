@@ -1,9 +1,12 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.db.models.signals import post_save,post_delete,pre_save
 from django.dispatch import receiver
 from im.models import Product
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Client(models.Model):
     tipo=[
@@ -261,39 +264,43 @@ class quoteItem(models.Model):
 
 @receiver(post_save, sender=saleItem)
 def OrderItemSignal(sender, instance, **kwargs):
-    # Check if the product exists
     if instance.product:
         barcode = instance.product.barcode
-        cantidad_solicitada=float(instance.quantity)
-        #Obtener los cproductos con el mismo codigo de barras
-        products_same= Product.objects.filter(barcode=instance.product.barcode).order_by('id')
-        product1=products_same.first() 
-        product2= products_same.last()
-        if product1.stock >= cantidad_solicitada:
-            nuevo_stock = product1.stock - cantidad_solicitada
-            product1.stock = nuevo_stock
-            product1.save()
-        else:
-            restante= cantidad_solicitada - product1.stock 
-            nuevo_stock2 = product2.stock - restante 
-            product1.stock = 0 
-            product2.stock = nuevo_stock2
-            product1.save()
-            product2.save()
+        cantidad_solicitada = float(instance.quantity)
+        
+        with transaction.atomic():
+            products_same = Product.objects.filter(barcode=barcode).order_by('id').select_for_update()
+            product1 = products_same.first() 
+            product2 = products_same.last()
+            
+            if product1 and product1.stock >= cantidad_solicitada:
+                nuevo_stock = product1.stock - cantidad_solicitada
+                product1.stock = nuevo_stock
+                product1.save()
+                logger.info(f"Stock deducted from product {product1.id}: {cantidad_solicitada} units. New stock: {nuevo_stock}")
+            elif product1 and product2:
+                restante = cantidad_solicitada - product1.stock 
+                nuevo_stock2 = product2.stock - restante 
+                product1.stock = 0 
+                product2.stock = nuevo_stock2
+                product1.save()
+                product2.save()
+                logger.info(f"Stock split deduction. Product1 {product1.id}: 0, Product2 {product2.id}: {nuevo_stock2}")
+            else:
+                logger.warning(f"Insufficient stock for product barcode {barcode}. Required: {cantidad_solicitada}")
 
     else:
-        logger.warning("saleItem instance has no associated product: %s", instance)
+        logger.warning(f"saleItem instance has no associated product: {instance}")
 
-     # Check if the sale and client exist
     if instance.sale and instance.sale.client:
         clientId = instance.sale.client.id
         cliente = Client.objects.get(id=clientId)
-        if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
-            monedero_percentaje = float(product1.monedero_percentaje) if instance.product else 0
+        if instance.sale.monedero == False:
+            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
             cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
             cliente.save()
-
-        else:#the client is using his monedro to pay
+            logger.info(f"Added monedero to client {clientId}: {instance.get_total * monedero_percentaje}")
+        else:
             if instance.get_total >= cliente.monedero:
                 cliente.monedero = 0
                 cliente.save()
@@ -301,36 +308,39 @@ def OrderItemSignal(sender, instance, **kwargs):
                 cliente.monedero = float(cliente.monedero) - instance.get_total
                 cliente.save()
     else:
-        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+        logger.warning(f"saleItem instance has no associated sale or client: {instance}")
 
 
  
 @receiver(pre_save, sender=saleItem)
-def OrderItemSignal(sender,instance,**kwargs):
+def OrderItemSignalPreSave(sender,instance,**kwargs):
     pass
 
 @receiver(post_delete, sender=saleItem)
-def OrderItemSignal(sender,instance,**kwargs):
+def OrderItemSignalDelete(sender,instance,**kwargs):
 # Check if the product exists
     if instance.product:
         producto_id = instance.product.id
-        producto = Product.objects.get(pk=producto_id)
         
-        # Update stock
-        cantidad = float(producto.stock) + float(instance.quantity)
-        producto.stock = cantidad
-        producto.save()
+        with transaction.atomic():
+            producto = Product.objects.select_for_update().get(pk=producto_id)
+            # Update stock
+            cantidad = float(producto.stock) + float(instance.quantity)
+            producto.stock = cantidad
+            producto.save()
+            logger.info(f"Stock restored for product {producto_id}: +{instance.quantity} units. New stock: {cantidad}")
     else:
-        logger.warning("saleItem instance has no associated product: %s", instance)
+        logger.warning(f"saleItem instance has no associated product: {instance}")
 
      # Check if the sale and client exist
     if instance.sale and instance.sale.client:
         clientId = instance.sale.client.id
         cliente = Client.objects.get(id=clientId)
         if instance.sale.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
-            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
             cliente.monedero = float(cliente.monedero) - (instance.get_total * monedero_percentaje) 
             cliente.save()
+            logger.info(f"Removed monedero from client {clientId}: {instance.get_total * monedero_percentaje}")
 
         else:#the client is using his monedro to pay
             if instance.get_total >= cliente.monedero:
@@ -341,7 +351,7 @@ def OrderItemSignal(sender,instance,**kwargs):
                 cliente.save()
 
     else:
-        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+        logger.warning(f"saleItem instance has no associated sale or client: {instance}")
 
 
 
@@ -470,56 +480,62 @@ class devolutionItem(models.Model):
 
 
 @receiver(post_save, sender=devolutionItem)
-def OrderItemSignal(sender, instance, **kwargs):
+def OrderItemSignalDevolutionSave(sender, instance, **kwargs):
     # Check if the product exists
     if instance.product:
         producto_id = instance.product.id
-        producto = Product.objects.get(pk=producto_id)
         
-        # Update stock
-        cantidad = float(producto.stock) + float(instance.quantity)
-        producto.stock = cantidad
-        producto.save()
+        with transaction.atomic():
+            producto = Product.objects.select_for_update().get(pk=producto_id)
+            # Update stock
+            cantidad = float(producto.stock) + float(instance.quantity)
+            producto.stock = cantidad
+            producto.save()
+            logger.info(f"Devolution stock added for product {producto_id}: +{instance.quantity} units. New stock: {cantidad}")
     else:
-        logger.warning("saleItem instance has no associated product: %s", instance)
+        logger.warning(f"devolutionItem instance has no associated product: {instance}")
 
      # Check if the sale and client exist
     if instance.devolution and instance.devolution.client:
         clientId = instance.devolution.client.id
         cliente = Client.objects.get(id=clientId)
         if instance.devolution.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
-            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
             cliente.monedero = float(cliente.monedero) - (instance.get_total * monedero_percentaje) 
             cliente.save()
+            logger.info(f"Removed monedero from devolution client {clientId}: {instance.get_total * monedero_percentaje}")
 
         else:#the client is using his monedro to pay
             pass
     else:
-        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+        logger.warning(f"devolutionItem instance has no associated devolution or client: {instance}")
 
 
 @receiver(post_delete, sender=devolutionItem)
-def OrderItemSignal(sender,instance,**kwargs):
+def OrderItemSignalDevolutionDelete(sender,instance,**kwargs):
 # Check if the product exists
     if instance.product:
         producto_id = instance.product.id
-        producto = Product.objects.get(pk=producto_id)
         
-        # Update stock
-        cantidad = float(producto.stock) - float(instance.quantity)
-        producto.stock = cantidad
-        producto.save()
+        with transaction.atomic():
+            producto = Product.objects.select_for_update().get(pk=producto_id)
+            # Update stock
+            cantidad = float(producto.stock) - float(instance.quantity)
+            producto.stock = cantidad
+            producto.save()
+            logger.info(f"Devolution stock removed for product {producto_id}: -{instance.quantity} units. New stock: {cantidad}")
     else:
-        logger.warning("saleItem instance has no associated product: %s", instance)
+        logger.warning(f"devolutionItem instance has no associated product: {instance}")
 
      # Check if the sale and client exist
     if instance.devolution and instance.devolution.client:
             clientId = instance.devolution.client.id
             cliente = Client.objects.get(id=clientId)
-            monedero_percentaje = float(producto.monedero_percentaje) if instance.product else 0
+            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
             cliente.monedero = float(cliente.monedero) + (instance.get_total * monedero_percentaje) 
             cliente.save()
+            logger.info(f"Added monedero to devolution client {clientId}: {instance.get_total * monedero_percentaje}")
 
     else:
-        logger.warning("saleItem instance has no associated sale or client: %s", instance)
+        logger.warning(f"devolutionItem instance has no associated devolution or client: {instance}")
 

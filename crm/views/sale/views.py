@@ -113,6 +113,15 @@ def saleGetData(request):
     if request.method == 'POST':
         call= json.loads(request.body)
         pk=call['id']
+        sale_id = call.get('sale_id')
+
+        if not sale_id:
+            return JsonResponse({'error':'sale_id is required'},status=400)
+
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return JsonResponse({'error':'Sale not found'},status=404)
 
         qs=Product.objects.filter(barcode=pk)
 
@@ -122,7 +131,6 @@ def saleGetData(request):
         if not product:
             return JsonResponse({'error':'No valid product found'},status=404)
 
-        sale=Sale.objects.first()
         if sale.tipo=='menudeo':
             name = [product.id,product.name,product.priceLista]
             print("menudeo")
@@ -156,7 +164,16 @@ def saleInicia(request):
 def saleItemView(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        sale=Sale.objects.first()
+        sale_id = data[2] if len(data) > 2 else None
+
+        if not sale_id:
+            return JsonResponse({'error':'sale_id is required'}, safe=False)
+
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return JsonResponse({'error':'Sale not found'}, safe=False)
+
         pk=int(data[0])
         product=Product.objects.get(id=pk)
         total_stock=product.stock
