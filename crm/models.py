@@ -263,31 +263,54 @@ class quoteItem(models.Model):
 
 
 @receiver(post_save, sender=saleItem)
-def OrderItemSignal(sender, instance, **kwargs):
+def OrderItemSignal(sender, instance, created, **kwargs):
     if instance.product:
         barcode = instance.product.barcode
-        cantidad_solicitada = float(instance.quantity)
         
-        with transaction.atomic():
-            products_same = Product.objects.filter(barcode=barcode).order_by('id').select_for_update()
-            product1 = products_same.first() 
-            product2 = products_same.last()
-            
-            if product1 and product1.stock >= cantidad_solicitada:
-                nuevo_stock = product1.stock - cantidad_solicitada
-                product1.stock = nuevo_stock
-                product1.save()
-                logger.info(f"Stock deducted from product {product1.id}: {cantidad_solicitada} units. New stock: {nuevo_stock}")
-            elif product1 and product2:
-                restante = cantidad_solicitada - product1.stock 
-                nuevo_stock2 = product2.stock - restante 
-                product1.stock = 0 
-                product2.stock = nuevo_stock2
-                product1.save()
-                product2.save()
-                logger.info(f"Stock split deduction. Product1 {product1.id}: 0, Product2 {product2.id}: {nuevo_stock2}")
-            else:
-                logger.warning(f"Insufficient stock for product barcode {barcode}. Required: {cantidad_solicitada}")
+        # Calculate the quantity change
+        if created:
+            # New item - deduct full quantity
+            cantidad_a_deducir = float(instance.quantity)
+        else:
+            # Updated item - deduct only the delta
+            old_qty = getattr(instance, '_old_quantity', 0)
+            new_qty = float(instance.quantity)
+            cantidad_a_deducir = new_qty - old_qty  # Could be positive or negative
+        
+        # Only update stock if there's a change
+        if cantidad_a_deducir != 0:
+            with transaction.atomic():
+                products_same = Product.objects.filter(barcode=barcode).order_by('id').select_for_update()
+                product1 = products_same.first() 
+                product2 = products_same.last()
+                
+                if cantidad_a_deducir > 0:
+                    # Deducting stock
+                    if product1 and product1.stock >= cantidad_a_deducir:
+                        nuevo_stock = product1.stock - cantidad_a_deducir
+                        product1.stock = nuevo_stock
+                        product1.save()
+                        logger.info(f"Stock deducted from product {product1.id}: {cantidad_a_deducir} units. New stock: {nuevo_stock}")
+                    elif product1 and product2:
+                        restante = cantidad_a_deducir - product1.stock 
+                        nuevo_stock2 = product2.stock - restante 
+                        product1.stock = 0 
+                        product2.stock = nuevo_stock2
+                        product1.save()
+                        product2.save()
+                        logger.info(f"Stock split deduction. Product1 {product1.id}: 0, Product2 {product2.id}: {nuevo_stock2}")
+                    else:
+                        logger.warning(f"Insufficient stock for product barcode {barcode}. Required: {cantidad_a_deducir}")
+                else:
+                    # Returning stock (negative delta)
+                    cantidad_a_retornar = abs(cantidad_a_deducir)
+                    if product1:
+                        nuevo_stock = product1.stock + cantidad_a_retornar
+                        product1.stock = nuevo_stock
+                        product1.save()
+                        logger.info(f"Stock returned to product {product1.id}: {cantidad_a_retornar} units. New stock: {nuevo_stock}")
+        else:
+            logger.info(f"No stock change needed for saleItem {instance.id}")
 
     else:
         logger.warning(f"saleItem instance has no associated product: {instance}")
@@ -313,8 +336,13 @@ def OrderItemSignal(sender, instance, **kwargs):
 
  
 @receiver(pre_save, sender=saleItem)
-def OrderItemSignalPreSave(sender,instance,**kwargs):
-    pass
+def OrderItemSignalPreSave(sender, instance, **kwargs):
+    # Store the old quantity for comparison in post_save
+    try:
+        old_instance = saleItem.objects.get(pk=instance.pk)
+        instance._old_quantity = float(old_instance.quantity)
+    except saleItem.DoesNotExist:
+        instance._old_quantity = 0
 
 @receiver(post_delete, sender=saleItem)
 def OrderItemSignalDelete(sender,instance,**kwargs):

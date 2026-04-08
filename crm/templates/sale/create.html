@@ -14,6 +14,7 @@
     {% for p in items%}
     <tr id="item-{{p.id}}">
             <td>
+                <!-- Increment/Decrement buttons temporarily disabled - will implement proper fix later
                 <button class="btn btn-sm btn-info decrementBtn" data-item-id="{{p.id}}" title="Decrease quantity">
                     <i class="fas fa-minus"></i>
                 </button>
@@ -21,6 +22,8 @@
                 <button class="btn btn-sm btn-info incrementBtn" data-item-id="{{p.id}}" title="Increase quantity">
                     <i class="fas fa-plus"></i>
                 </button>
+                -->
+                <span class="quantity-display" id="qty-{{p.id}}">{{ p.quantity}}</span>
             </td>
             <td>{{ p.product}}</td>
             <td>{{ p.precioUnitario|floatformat:3}}</td>

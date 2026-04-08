@@ -62,7 +62,7 @@ btnAdd.addEventListener("click",(e)=>{
 
 
 const registrarItem= (codigo,quantity)=>{
- console.log("heeeY")
+ console.log("Adding item to cart")
     let url = "/sale/itemview"
     const saleId = document.getElementById('sale_id').value;
     fetch(url,{
@@ -78,14 +78,20 @@ const registrarItem= (codigo,quantity)=>{
         })
         .then((data)=>{
             console.log(data)
-		datos=data
-		if (datos =='No hay stock suficiente'){
+		if (data === 'No hay stock suficiente'){
 			alert('No hay suficiente stock')
 		}
-		else{
-			console.log('hubo errooor')
+		else if (data.success){
+			// Successfully added, reload to get updated items and totals
 			location.reload()
-		} 
+		}
+		else {
+			alert('Error adding item')
+		}
+        })
+        .catch((error) => {
+            console.error('Error:', error)
+            alert('Failed to add item')
         })
 }
 
@@ -120,7 +126,7 @@ document.querySelectorAll('.incrementBtn').forEach(button => {
 	button.addEventListener('click', function(e) {
 		e.preventDefault();
 		const itemId = this.getAttribute('data-item-id');
-		updateItemQuantity(itemId, 'increment');
+		updateItemQuantity(1 , 'increment');
 	})
 })
 
@@ -147,8 +153,32 @@ const updateItemQuantity = (itemId, action) => {
 	.then(data => {
 		console.log(data);
 		if(data.success) {
-			// Reload page to refresh cart and inventory, same as registrarItem does
-			location.reload()
+			if(data.deleted) {
+				// Item was deleted because quantity reached 0
+				const itemRow = document.getElementById(`item-${itemId}`);
+				if(itemRow) {
+					itemRow.remove();
+				}
+				// Update cart total
+				totalFactura.value = parseFloat(data.cart_total).toFixed(2);
+			} else {
+				// Update quantity display in the table
+				const qtyDisplay = document.getElementById(`qty-${itemId}`);
+				if(qtyDisplay) {
+					qtyDisplay.textContent = data.quantity;
+				}
+				
+				// Update item total (precioUnitario is stored, need to calculate)
+				const row = document.getElementById(`item-${itemId}`);
+				if(row) {
+					const precioUnitario = parseFloat(row.cells[2].textContent);
+					const newTotal = (precioUnitario * data.quantity).toFixed(2);
+					row.cells[3].textContent = newTotal;
+				}
+				
+				// Update cart total
+				totalFactura.value = parseFloat(data.cart_total).toFixed(2);
+			}
 		} else {
 			alert('Error: ' + (data.error || 'Unknown error'));
 		}

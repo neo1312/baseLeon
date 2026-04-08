@@ -203,13 +203,15 @@ def saleItemView(request):
             outputlist=list(filter(lambda x:x.product.id==pk,itemssale))
             if outputlist:
                 repetido=outputlist[0]
-                quantity=int(repetido.quantity)+int(quantity)
+                quantity=int(float(repetido.quantity))+int(quantity)
                 saleItem.objects.filter(id=repetido.id).delete()
                 saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero,sat=sat)
-                return JsonResponse('se sumaron',safe=False)
+                # Stock deduction is handled by post_save signal
+                return JsonResponse({'success': True, 'message': 'se sumaron', 'cart_total': sale.get_cart_total}, safe=False)
             else:
                 saleItem.objects.create(product=product,sale=sale,quantity=quantity,cost=cost,margen=margen,monedero=monedero,sat=sat)
-                return JsonResponse('creo nuevo registro',safe=False)
+                # Stock deduction is handled by post_save signal
+                return JsonResponse({'success': True, 'message': 'creo nuevo registro', 'cart_total': sale.get_cart_total}, safe=False)
 
 @csrf_exempt
 def saleItemDelete(request,pk):
@@ -320,7 +322,7 @@ def print_ticket_view(request, pk):
 
 @csrf_exempt
 def saleItemUpdateQuantity(request):
-    """Update quantity of a sale item and adjust inventory accordingly"""
+    """Update quantity of a sale item. Stock adjustment is handled by post_save signal."""
     if request.method == "POST":
         data = json.loads(request.body)
         item_id = data.get('item_id')
@@ -334,66 +336,46 @@ def saleItemUpdateQuantity(request):
         except saleItem.DoesNotExist:
             return JsonResponse({'error': 'Sale item not found'}, status=404)
         
-        with transaction.atomic():
-            # Lock the product row to prevent race conditions
-            product = Product.objects.select_for_update().get(id=sale_item.product.id)
-            current_qty = float(sale_item.quantity)
+        current_qty = float(sale_item.quantity)
+        
+        if action == 'increment':
+            new_qty = current_qty + 1
+        elif action == 'decrement':
+            if current_qty <= 0:
+                return JsonResponse({'error': 'Cannot decrement below 0'}, status=400)
+            new_qty = current_qty - 1
+        else:
+            return JsonResponse({'error': 'Invalid action'}, status=400)
+        
+        # If quantity reaches 0, delete the item
+        if new_qty <= 0:
+            sale_id = sale_item.sale.id
+            sale_item.delete()
             
-            if action == 'increment':
-                # Check if there's stock available to increment
-                if product.stock <= 0:
-                    return JsonResponse({'error': 'No stock available'}, status=400)
-                
-                new_qty = current_qty + 1
-                product.stock -= 1
-                
-                logging.info(f"Stock deducted from product {product.id} ({product.name}): 1 unit. New stock: {product.stock}")
-                
-            elif action == 'decrement':
-                # Decrement quantity and return stock
-                if current_qty <= 0:
-                    return JsonResponse({'error': 'Cannot decrement below 0'}, status=400)
-                
-                new_qty = current_qty - 1
-                product.stock += 1
-                
-                logging.info(f"Stock returned to product {product.id} ({product.name}): 1 unit. New stock: {product.stock}")
-                
-            else:
-                return JsonResponse({'error': 'Invalid action'}, status=400)
+            # Recalculate sale total
+            sale = Sale.objects.get(id=sale_id)
+            new_total = sale.get_cart_total
             
-            # Save product with updated stock
-            product.save()
+            return JsonResponse({
+                'success': True,
+                'message': 'Item removed (quantity reached 0)',
+                'deleted': True,
+                'cart_total': float(new_total)
+            })
+        else:
+            # Update sale item quantity (stock adjustment via post_save signal)
+            sale_item.quantity = str(new_qty)
+            sale_item.save()
             
-            # If quantity reaches 0, delete the item
-            if new_qty <= 0:
-                sale_id = sale_item.sale.id
-                sale_item.delete()
-                
-                # Recalculate sale total
-                sale = Sale.objects.get(id=sale_id)
-                new_total = sale.get_cart_total
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Item removed (quantity reached 0)',
-                    'deleted': True,
-                    'cart_total': float(new_total)
-                })
-            else:
-                # Update sale item quantity
-                sale_item.quantity = str(new_qty)
-                sale_item.save()
-                
-                # Recalculate sale total
-                sale = sale_item.sale
-                new_total = sale.get_cart_total
-                
-                return JsonResponse({
-                    'success': True,
-                    'quantity': new_qty,
-                    'cart_total': float(new_total),
-                    'deleted': False
-                })
+            # Recalculate sale total
+            sale = sale_item.sale
+            new_total = sale.get_cart_total
+            
+            return JsonResponse({
+                'success': True,
+                'quantity': new_qty,
+                'cart_total': float(new_total),
+                'deleted': False
+            })
     
     return JsonResponse({'error': 'Invalid method'}, status=405)
