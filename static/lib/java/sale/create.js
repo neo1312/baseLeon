@@ -26,13 +26,14 @@ btnCart.addEventListener("click",(e)=>{
 
 const traerData = (valorBtn)=>{
     let url = "/sale/getdata"
+    const saleId = document.getElementById('sale_id').value;
     fetch(url,{
         method:'POST',
         headers:{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify({'id':valorBtn})
+        body:JSON.stringify({'id':valorBtn, 'sale_id': saleId})
     })
         .then((response)=>{
             return response.json();
@@ -63,13 +64,14 @@ btnAdd.addEventListener("click",(e)=>{
 const registrarItem= (codigo,quantity)=>{
  console.log("heeeY")
     let url = "/sale/itemview"
+    const saleId = document.getElementById('sale_id').value;
     fetch(url,{
         method:'POST',
         headers:{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify([codigo,quantity])
+        body:JSON.stringify([codigo, quantity, saleId])
     })
         .then((response)=>{
             return response.json();
