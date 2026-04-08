@@ -114,4 +114,56 @@ document.querySelectorAll('.deleteButton').forEach(button => {
 			})
 			})
 })
+
+// increment quantity
+document.querySelectorAll('.incrementBtn').forEach(button => {
+	button.addEventListener('click', function(e) {
+		e.preventDefault();
+		const itemId = this.getAttribute('data-item-id');
+		updateItemQuantity(itemId, 'increment');
+	})
+})
+
+// decrement quantity
+document.querySelectorAll('.decrementBtn').forEach(button => {
+	button.addEventListener('click', function(e) {
+		e.preventDefault();
+		const itemId = this.getAttribute('data-item-id');
+		updateItemQuantity(itemId, 'decrement');
+	})
+})
+
+const updateItemQuantity = (itemId, action) => {
+	let url = "/sale/itemupdate/"
+	fetch(url, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-CSRFToken': csrftoken,
+		},
+		body: JSON.stringify({'item_id': itemId, 'action': action})
+	})
+	.then(response => response.json())
+	.then(data => {
+		console.log(data);
+		if(data.success) {
+			if(data.deleted) {
+				// Item was deleted
+				document.getElementById(`item-${itemId}`).remove();
+				alert(data.message);
+			} else {
+				// Item quantity was updated
+				document.getElementById(`qty-${itemId}`).innerText = data.quantity;
+			}
+			// Update total
+			totalFactura.value = data.cart_total.toFixed(2);
+		} else {
+			alert('Error: ' + (data.error || 'Unknown error'));
+		}
+	})
+	.catch(error => {
+		console.error('Error:', error);
+		alert('Failed to update quantity');
+	})
+}
 }

@@ -3,7 +3,7 @@ from django.urls import path
 
 #import 
 from crm.views.client.views import clientList, clientCreate,clientEdit,clientDelete
-from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,salepdfPrint,saleNew,saleLast,saleCreateNew,sale_ticket_json,print_ticket_view
+from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,salepdfPrint,saleNew,saleLast,saleCreateNew,sale_ticket_json,print_ticket_view,saleItemUpdateQuantity
 from crm.views.quote.views import quoteList, quoteInicia,quoteEdit,quoteDelete,quoteCreate,quoteGetData,quoteItemView,quoteItemDelete,quotepdfPrint,quoteNew,quoteLast
 from crm.views.devolution.views import devolutionList, devolutionEdit, devolutionDelete, devolutionCreate,devolutionInicia,devolutionItemView,devolutionGetData,devolutionItemDelete,devpdfPrint,devolutionNew
 
@@ -25,6 +25,7 @@ urlpatterns=[
 
         path('sale/itemview',saleItemView,name='saleItemView'),
         path('sale/itemdelete/<int:pk>/',saleItemDelete,name='saleItemDelete'),
+        path('sale/itemupdate/',saleItemUpdateQuantity,name='saleItemUpdateQuantity'),
         path('sale/pdfprint/<int:pk>/',salepdfPrint,name='pdfPrint'),
         path('sale/last',saleLast,name='saleLast'),
         path('sale/sale_ticket_json/<int:pk>',sale_ticket_json,name='saleLast'),

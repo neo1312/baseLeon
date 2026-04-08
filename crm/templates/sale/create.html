@@ -13,13 +13,21 @@
 {% block rows %}
     {% for p in items%}
     <tr id="item-{{p.id}}">
-            <td>{{ p.quantity}}</td>
+            <td>
+                <button class="btn btn-sm btn-info decrementBtn" data-item-id="{{p.id}}" title="Decrease quantity">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="quantity-display" id="qty-{{p.id}}">{{ p.quantity}}</span>
+                <button class="btn btn-sm btn-info incrementBtn" data-item-id="{{p.id}}" title="Increase quantity">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </td>
             <td>{{ p.product}}</td>
             <td>{{ p.precioUnitario|floatformat:3}}</td>
             <td>{{ p.get_total|floatformat:2}}</td>
             <td>
-		    <a href="#"  class="btn btn-danger btn-xs btn-flat  deleteButton" data-item-id="{{p.id}}">
-                            <i class="fas fa-trash-alt"></i>Delete</a> 
+                <a href="#"  class="btn btn-danger btn-xs btn-flat deleteButton" data-item-id="{{p.id}}">
+                                <i class="fas fa-trash-alt"></i>Delete</a> 
             </td>
         </tr>
     {% endfor %}
