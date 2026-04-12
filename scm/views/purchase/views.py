@@ -248,6 +248,57 @@ def parse_datetime_or_now(value):
     return value  # Django intentará convertirlo
 
 
+def get_first_csv_value(row, *keys):
+    for key in keys:
+        value = row.get(key)
+        if value is None:
+            continue
+
+        value = str(value).strip()
+        if value != "":
+            return value
+
+    return None
+
+
+def resolve_csv_product(row):
+    product_id_value = get_first_csv_value(row, 'product', 'product_id')
+    if product_id_value:
+        try:
+            product = Product.objects.filter(id=int(product_id_value)).first()
+            if product:
+                return product
+        except (ValueError, TypeError):
+            pass
+
+    pv1_value = get_first_csv_value(row, 'pv1', 'Clave', 'clave')
+    if pv1_value:
+        return Product.objects.filter(pv1=pv1_value).first()
+
+    return None
+
+
+def resolve_csv_purchase(row):
+    purchase_value = get_first_csv_value(row, 'purchase', 'purchase_id')
+    if purchase_value:
+        try:
+            purchase = Purchase.objects.filter(id=int(purchase_value)).first()
+            if purchase:
+                return purchase
+        except (ValueError, TypeError):
+            pass
+
+    purchase = Purchase.objects.last()
+    if purchase:
+        return purchase
+
+    provider = Provider.objects.filter(name='general').first() or Provider.objects.first()
+    if provider:
+        return Purchase.objects.create(provider=provider)
+
+    return None
+
+
 # ------------------------------
 # Vista: Subir CSV (solo lectura y preview)
 # ------------------------------
@@ -309,29 +360,37 @@ def upload_csv_confirm(request):
         return HttpResponse('<div class="alert alert-danger">No data to import.</div>')
 
     created_cnt = 0
+    skipped_cnt = 0
     for r in rows:
         try:
-            pv1_value = r.get('pv1')
-            product = Product.objects.filter(pv1=pv1_value).first()
+            product = resolve_csv_product(r)
             if not product:
+                skipped_cnt += 1
+                continue
+
+            purchase = resolve_csv_purchase(r)
+            quantity_value = get_first_csv_value(r, 'quantity', 'cantidad', 'Cantidad')
+            cost_value = get_first_csv_value(r, 'cost', 'costo', 'Costo')
+
+            if not purchase or not quantity_value or cost_value is None:
+                skipped_cnt += 1
                 continue
 
             purchaseItem.objects.create(
-                id=int(r['id']),
-                product_id=product.id,
-                purchase_id=int(r['purchase']),
-                quantity=int(r['quantity']),
-                cost=r['cost'],
+                product=product,
+                purchase=purchase,
+                quantity=int(quantity_value),
+                cost=cost_value,
                 date_created=timezone.now(),
                 last_update=timezone.now(),
             )
             created_cnt += 1
-        except IntegrityError:
+        except (IntegrityError, ValueError, TypeError):
+            skipped_cnt += 1
             continue
 
     return HttpResponse(
         '<div class="alert alert-success">'
-        'Inserted {} new rows (duplicates skipped).'
-        '</div>'.format(created_cnt)
+        'Inserted {} new rows. Skipped {} rows.'
+        '</div>'.format(created_cnt, skipped_cnt)
     )
-

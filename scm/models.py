@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.db.models.signals import post_save,post_delete
 from django.dispatch import receiver
@@ -92,17 +92,24 @@ class purchaseItem(models.Model):
         return total
 
 @receiver(post_save, sender=purchaseItem)
-def OrderItemSignal(sender,instance,**kwargs):
-    producto_id=instance.product.id
-    producto=Product.objects.get(pk=producto_id)
-    cantidad= float(producto.stock)+float(instance.quantity)
-    producto.stock=cantidad
-    producto.save()
+def purchase_item_post_save(sender, instance, **kwargs):
+    if not instance.product_id or instance.quantity is None:
+        return
+
+    with transaction.atomic():
+        producto = Product.objects.select_for_update().get(pk=instance.product_id)
+        cantidad = int(producto.stock) + int(instance.quantity)
+        producto.stock = cantidad
+        producto.save()
+
 
 @receiver(post_delete, sender=purchaseItem)
-def OrderItemSignal(sender,instance,**kwargs):
-    producto_id=instance.product.id
-    producto=Product.objects.get(pk=producto_id)
-    cantidad= float(producto.stock)-float(instance.quantity)
-    producto.stock=cantidad
-    producto.save()
+def purchase_item_post_delete(sender, instance, **kwargs):
+    if not instance.product_id or instance.quantity is None:
+        return
+
+    with transaction.atomic():
+        producto = Product.objects.select_for_update().get(pk=instance.product_id)
+        cantidad = int(producto.stock) - int(instance.quantity)
+        producto.stock = cantidad
+        producto.save()
