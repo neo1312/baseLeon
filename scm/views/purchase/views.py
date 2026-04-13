@@ -1,5 +1,7 @@
 #basic libraries
 
+from decimal import Decimal, InvalidOperation
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse,HttpResponse
 import json
@@ -13,7 +15,7 @@ from scm.models import Purchase,Provider,Product,purchaseItem
 from scm.forms import purchaseForm 
 from io import TextIOWrapper
 from django.urls import reverse
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 
@@ -72,8 +74,8 @@ def purchaseDelete(request,pk):
     return render(request,  'purchase/delete.html',context)
 
 def purchaseCreate(request):
-    purchase=Purchase.objects.last()
-    items=purchase.purchaseitem_set.all()
+    purchase = get_latest_purchase()
+    items = purchase.purchaseitem_set.all() if purchase else []
     context={
             'url_js':'/static/lib/java/purchase/create.js',
             'items':items,
@@ -89,14 +91,18 @@ def purchaseGetData(request):
         pk=call['id']
         pk1=str(pk)
         qs=Product.objects.get(pv1=pk)
-        purchase=Purchase.objects.last()
         name = [qs.id,qs.name,qs.costo]
         return JsonResponse({'datos':name},safe=False)
 
 def purchaseItemView(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        purchase=Purchase.objects.last()
+        purchase = get_latest_purchase()
+        if purchase is None:
+            provider = Provider.objects.filter(name='general').first() or Provider.objects.first()
+            if provider is None:
+                return JsonResponse('No provider available for purchase.', safe=False, status=400)
+            purchase = Purchase.objects.create(provider=provider)
         pk=int(data[0])
         quantity=data[1]
         product=Product.objects.get(id=pk)
@@ -261,6 +267,16 @@ def get_first_csv_value(row, *keys):
     return None
 
 
+def normalize_csv_key(value):
+    if value is None:
+        return None
+    return str(value).replace('\ufeff', '').replace('ï»¿', '').strip()
+
+
+def get_latest_purchase():
+    return Purchase.objects.order_by('-id').first()
+
+
 def resolve_csv_product(row):
     product_id_value = get_first_csv_value(row, 'product', 'product_id')
     if product_id_value:
@@ -275,28 +291,135 @@ def resolve_csv_product(row):
     if pv1_value:
         return Product.objects.filter(pv1=pv1_value).first()
 
-    return None
-
-
-def resolve_csv_purchase(row):
-    purchase_value = get_first_csv_value(row, 'purchase', 'purchase_id')
-    if purchase_value:
+    legacy_product_id = get_first_csv_value(row, 'id')
+    if legacy_product_id:
         try:
-            purchase = Purchase.objects.filter(id=int(purchase_value)).first()
-            if purchase:
-                return purchase
+            return Product.objects.filter(id=int(legacy_product_id)).first()
         except (ValueError, TypeError):
             pass
 
-    purchase = Purchase.objects.last()
-    if purchase:
-        return purchase
-
-    provider = Provider.objects.filter(name='general').first() or Provider.objects.first()
-    if provider:
-        return Purchase.objects.create(provider=provider)
-
     return None
+
+
+def get_import_provider():
+    return Provider.objects.filter(name='general').first() or Provider.objects.first()
+
+
+def validate_csv_row(row, row_number):
+    errors = []
+
+    product_reference = get_first_csv_value(row, 'product', 'product_id', 'pv1', 'Clave', 'clave', 'id')
+    if not product_reference:
+        errors.append('missing product reference')
+
+    product = resolve_csv_product(row)
+    if product_reference and not product:
+        errors.append('product not found')
+
+    quantity_value = get_first_csv_value(row, 'quantity', 'cantidad', 'Cantidad')
+    if quantity_value is None:
+        quantity = None
+        errors.append('quantity is required')
+    else:
+        try:
+            quantity = int(str(quantity_value).strip())
+            if quantity <= 0:
+                errors.append('quantity must be greater than 0')
+        except (TypeError, ValueError):
+            quantity = None
+            errors.append('quantity must be a whole number')
+
+    cost_value = get_first_csv_value(row, 'cost', 'costo', 'Costo')
+    if cost_value is None:
+        cost = None
+        errors.append('cost is required')
+    else:
+        try:
+            cost = Decimal(str(cost_value).strip().replace(',', ''))
+            if cost < 0:
+                errors.append('cost must be 0 or greater')
+        except (InvalidOperation, TypeError, ValueError):
+            cost = None
+            errors.append('cost must be numeric')
+
+    return {
+        'row_number': row_number,
+        'row': row,
+        'product': product,
+        'quantity': quantity,
+        'cost': cost,
+        'errors': errors,
+    }
+
+
+def validate_csv_rows(rows):
+    return [validate_csv_row(row, index) for index, row in enumerate(rows, start=1)]
+
+
+def render_csv_validation_response(file_name, validations):
+    total_rows = len(validations)
+    error_rows = [validation for validation in validations if validation['errors']]
+    preview_headers = list(validations[0]['row'].keys())[:4] if validations else []
+    preview_rows = validations[:5]
+
+    html = '<div class="alert alert-info">Found {} rows in "{}".</div>'.format(
+        total_rows, file_name
+    )
+    html += (
+        '<div class="alert alert-secondary">'
+        'A new purchase will be created automatically if the import succeeds. '
+        'All rows will be linked to that same purchase.'
+        '</div>'
+    )
+
+    if error_rows:
+        html += (
+            '<div class="alert alert-danger">'
+            'Import aborted. Fix the CSV before continuing. {} row(s) have errors.'
+            '</div>'
+        ).format(len(error_rows))
+        html += '<ul class="mb-3">'
+        for validation in error_rows[:20]:
+            html += '<li>Row {}: {}</li>'.format(
+                validation['row_number'],
+                ', '.join(validation['errors']),
+            )
+        if len(error_rows) > 20:
+            html += '<li>...and {} more row(s).</li>'.format(len(error_rows) - 20)
+        html += '</ul>'
+    else:
+        html += (
+            '<div class="alert alert-success">'
+            'Validation passed. {} row(s) ready to import.'
+            '</div>'
+        ).format(total_rows)
+
+    html += '<table class="table table-sm table-bordered mt-3"><thead><tr><th>Row</th>'
+    for header in preview_headers:
+        html += '<th>{}</th>'.format(header)
+    html += '<th>Status</th></tr></thead><tbody>'
+
+    for validation in preview_rows:
+        html += '<tr>'
+        html += '<td>{}</td>'.format(validation['row_number'])
+        for header in preview_headers:
+            html += '<td>{}</td>'.format(validation['row'].get(header, ''))
+        status = 'OK' if not validation['errors'] else '; '.join(validation['errors'])
+        html += '<td>{}</td></tr>'.format(status)
+
+    html += '</tbody></table>'
+
+    if not error_rows:
+        html += '''
+          <div class="mt-3">
+            <button class="btn btn-success" type="button"
+                    hx-post="{}" hx-target="#upload-result">
+              Import these {} rows
+            </button>
+          </div>
+        '''.format(reverse('scm:uploadcsv_confirm'), total_rows)
+
+    return HttpResponse(html)
 
 
 # ------------------------------
@@ -307,48 +430,34 @@ def upload_csv_action(request):
     if not file:
         return HttpResponse('<div class="alert alert-danger">No file.</div>')
 
-    decoded = file.read().decode('latin1').replace('\x00', '')
-    lines = decoded.splitlines()
-    rows = list(csv.DictReader(lines))
+    decoded = file.read().decode('utf-8-sig', errors='replace').replace('\x00', '')
+    sample = decoded[:2048]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=',;\t|')
+    except csv.Error:
+        dialect = csv.excel
 
-    request.session['csv_rows'] = rows
+    reader = csv.DictReader(io.StringIO(decoded), dialect=dialect)
+    rows = [
+        {
+            normalize_csv_key(key): value
+            for key, value in row.items()
+            if normalize_csv_key(key) is not None
+        }
+        for row in reader
+    ]
 
     if not rows:
+        request.session.pop('csv_rows', None)
         return HttpResponse('<div class="alert alert-warning">CSV is empty.</div>')
 
-    # Preview (primeras 3 filas)
-    preview_rows = rows[:3]
-    headers = list(rows[0].keys())[:3]  # mostrar solo primeras 3 columnas
+    validations = validate_csv_rows(rows)
+    if any(validation['errors'] for validation in validations):
+        request.session.pop('csv_rows', None)
+    else:
+        request.session['csv_rows'] = rows
 
-    html = '<div class="alert alert-info">Found {} rows in "{}".</div>'.format(
-        len(rows), file.name
-    )
-    html += '<table class="table table-sm table-bordered mt-3"><thead><tr>'
-
-    for h in headers:
-        html += '<th>{}</th>'.format(h)
-
-    html += '</tr></thead><tbody>'
-
-    for r in preview_rows:
-        html += '<tr>'
-        for h in headers:
-            html += '<td>{}</td>'.format(r.get(h, ''))
-        html += '</tr>'
-
-    html += '</tbody></table>'
-
-    # Botón para confirmar la importación
-    html += '''
-      <div class="mt-3">
-        <button class="btn btn-success" type="button"
-                hx-post="{}" hx-target="#upload-result">
-          Import these {} rows
-        </button>
-      </div>
-    '''.format(reverse('scm:uploadcsv_confirm'), len(rows))
-
-    return HttpResponse(html)
+    return render_csv_validation_response(file.name, validations)
 
 
 # ------------------------------
@@ -359,38 +468,62 @@ def upload_csv_confirm(request):
     if not rows:
         return HttpResponse('<div class="alert alert-danger">No data to import.</div>')
 
-    created_cnt = 0
-    skipped_cnt = 0
-    for r in rows:
-        try:
-            product = resolve_csv_product(r)
-            if not product:
-                skipped_cnt += 1
-                continue
-
-            purchase = resolve_csv_purchase(r)
-            quantity_value = get_first_csv_value(r, 'quantity', 'cantidad', 'Cantidad')
-            cost_value = get_first_csv_value(r, 'cost', 'costo', 'Costo')
-
-            if not purchase or not quantity_value or cost_value is None:
-                skipped_cnt += 1
-                continue
-
-            purchaseItem.objects.create(
-                product=product,
-                purchase=purchase,
-                quantity=int(quantity_value),
-                cost=cost_value,
-                date_created=timezone.now(),
-                last_update=timezone.now(),
+    validations = validate_csv_rows(rows)
+    error_rows = [validation for validation in validations if validation['errors']]
+    if error_rows:
+        html = (
+            '<div class="alert alert-danger">'
+            'Import aborted. No rows were inserted.'
+            '</div><ul>'
+        )
+        for validation in error_rows[:20]:
+            html += '<li>Row {}: {}</li>'.format(
+                validation['row_number'],
+                ', '.join(validation['errors']),
             )
-            created_cnt += 1
-        except (IntegrityError, ValueError, TypeError):
-            skipped_cnt += 1
-            continue
+        if len(error_rows) > 20:
+            html += '<li>...and {} more row(s).</li>'.format(len(error_rows) - 20)
+        html += '</ul>'
+        return HttpResponse(html)
 
-    return HttpResponse(
+    provider = get_import_provider()
+    if provider is None:
+        return HttpResponse(
+            '<div class="alert alert-danger">'
+            'Import aborted. No provider is available to create the purchase.'
+            '</div>'
+        )
+
+    try:
+        with transaction.atomic():
+            purchase = Purchase.objects.create(provider=provider)
+            for validation in validations:
+                purchaseItem.objects.create(
+                    product=validation['product'],
+                    purchase=purchase,
+                    quantity=validation['quantity'],
+                    cost=str(validation['cost']),
+                    date_created=timezone.now(),
+                    last_update=timezone.now(),
+                )
+    except (IntegrityError, ValueError, TypeError) as exc:
+        return HttpResponse(
+            '<div class="alert alert-danger">'
+            'Import aborted. No rows were inserted. Error: {}'
+            '</div>'.format(exc)
+        )
+
+    html = (
         '<div class="alert alert-success">'
-        'Inserted {} new rows. Skipped {} rows.'
-        '</div>'.format(created_cnt, skipped_cnt)
-    )
+        'Inserted {} new rows into purchase {}. Import completed successfully.'
+        '</div>'
+    ).format(len(validations), purchase.id)
+    html += '<table class="table table-sm table-bordered mt-3"><thead><tr><th>PV1</th><th>Quantity</th></tr></thead><tbody>'
+    for validation in validations:
+        html += '<tr><td>{}</td><td>{}</td></tr>'.format(
+            validation['product'].pv1,
+            validation['quantity'],
+        )
+    html += '</tbody></table>'
+
+    return HttpResponse(html)
