@@ -422,6 +422,73 @@ def render_csv_validation_response(file_name, validations):
     return HttpResponse(html)
 
 
+def render_csv_validation_response_barcode(file_name, validations):
+    """Barcode version of CSV validation response"""
+    total_rows = len(validations)
+    error_rows = [validation for validation in validations if validation['errors']]
+    preview_headers = list(validations[0]['row'].keys())[:4] if validations else []
+    preview_rows = validations[:5]
+
+    html = '<div class="alert alert-info">Found {} rows in "{}".</div>'.format(
+        total_rows, file_name
+    )
+    html += (
+        '<div class="alert alert-secondary">'
+        'A new purchase will be created automatically if the import succeeds. '
+        'All rows will be linked to that same purchase.'
+        '</div>'
+    )
+
+    if error_rows:
+        html += (
+            '<div class="alert alert-danger">'
+            'Import aborted. Fix the CSV before continuing. {} row(s) have errors.'
+            '</div>'
+        ).format(len(error_rows))
+        html += '<ul class="mb-3">'
+        for validation in error_rows[:20]:
+            html += '<li>Row {}: {}</li>'.format(
+                validation['row_number'],
+                ', '.join(validation['errors']),
+            )
+        if len(error_rows) > 20:
+            html += '<li>...and {} more row(s).</li>'.format(len(error_rows) - 20)
+        html += '</ul>'
+    else:
+        html += (
+            '<div class="alert alert-success">'
+            'Validation passed. {} row(s) ready to import.'
+            '</div>'
+        ).format(total_rows)
+
+    html += '<table class="table table-sm table-bordered mt-3"><thead><tr><th>Row</th>'
+    for header in preview_headers:
+        html += '<th>{}</th>'.format(header)
+    html += '<th>Status</th></tr></thead><tbody>'
+
+    for validation in preview_rows:
+        html += '<tr>'
+        html += '<td>{}</td>'.format(validation['row_number'])
+        for header in preview_headers:
+            html += '<td>{}</td>'.format(validation['row'].get(header, ''))
+        status = 'OK' if not validation['errors'] else '; '.join(validation['errors'])
+        html += '<td>{}</td></tr>'.format(status)
+
+    html += '</tbody></table>'
+
+    if not error_rows:
+        html += '''
+          <div class="mt-3">
+            <button class="btn btn-success" type="button"
+                    hx-post="{}" hx-target="#upload-result">
+              Import these {} rows
+            </button>
+          </div>
+        '''.format(reverse('scm:uploadcsv_confirm_barcode'), total_rows)
+
+    return HttpResponse(html)
+
+
 # ------------------------------
 # Vista: Subir CSV (solo lectura y preview)
 # ------------------------------
@@ -456,6 +523,7 @@ def upload_csv_action(request):
         request.session.pop('csv_rows', None)
     else:
         request.session['csv_rows'] = rows
+        request.session.modified = True
 
     return render_csv_validation_response(file.name, validations)
 
@@ -522,6 +590,197 @@ def upload_csv_confirm(request):
     for validation in validations:
         html += '<tr><td>{}</td><td>{}</td></tr>'.format(
             validation['product'].pv1,
+            validation['quantity'],
+        )
+    html += '</tbody></table>'
+
+    return HttpResponse(html)
+
+
+# ==============================
+# Barcode CSV Upload Functions
+# ==============================
+
+def resolve_csv_product_barcode(row):
+    """Resolve product by barcode for CSV import"""
+    product_id_value = get_first_csv_value(row, 'product', 'product_id')
+    if product_id_value:
+        try:
+            product = Product.objects.filter(id=int(product_id_value)).first()
+            if product:
+                return product
+        except (ValueError, TypeError):
+            pass
+
+    barcode_value = get_first_csv_value(row, 'barcode', 'Barcode', 'codigo')
+    if barcode_value:
+        return Product.objects.filter(barcode=barcode_value).first()
+
+    legacy_product_id = get_first_csv_value(row, 'id')
+    if legacy_product_id:
+        try:
+            return Product.objects.filter(id=int(legacy_product_id)).first()
+        except (ValueError, TypeError):
+            pass
+
+    return None
+
+
+def validate_csv_row_barcode(row, row_number):
+    """Validate CSV row for barcode import"""
+    errors = []
+
+    product_reference = get_first_csv_value(row, 'product', 'product_id', 'barcode', 'Barcode', 'codigo', 'id')
+    if not product_reference:
+        errors.append('missing product reference')
+
+    product = resolve_csv_product_barcode(row)
+    if product_reference and not product:
+        errors.append('product not found')
+
+    quantity_value = get_first_csv_value(row, 'quantity', 'cantidad', 'Cantidad')
+    if quantity_value is None:
+        quantity = None
+        errors.append('quantity is required')
+    else:
+        try:
+            quantity = int(str(quantity_value).strip())
+            if quantity <= 0:
+                errors.append('quantity must be greater than 0')
+        except (TypeError, ValueError):
+            quantity = None
+            errors.append('quantity must be a whole number')
+
+    cost_value = get_first_csv_value(row, 'cost', 'costo', 'Costo')
+    if cost_value is None:
+        cost = None
+        errors.append('cost is required')
+    else:
+        try:
+            cost = Decimal(str(cost_value).strip().replace(',', ''))
+            if cost < 0:
+                errors.append('cost must be 0 or greater')
+        except (InvalidOperation, TypeError, ValueError):
+            cost = None
+            errors.append('cost must be numeric')
+
+    return {
+        'row_number': row_number,
+        'row': row,
+        'product': product,
+        'quantity': quantity,
+        'cost': cost,
+        'errors': errors,
+    }
+
+
+def validate_csv_rows_barcode(rows):
+    """Validate all CSV rows for barcode import"""
+    return [validate_csv_row_barcode(row, index) for index, row in enumerate(rows, start=1)]
+
+
+def upload_csv_barcode(request):
+    """Render barcode CSV upload form"""
+    return render(request, "purchase/upload_purchase_items_barcode.html")
+
+
+def upload_csv_action_barcode(request):
+    """Process barcode CSV file upload"""
+    file = request.FILES.get('csv')
+    if not file:
+        return HttpResponse('<div class="alert alert-danger">No file.</div>')
+
+    decoded = file.read().decode('utf-8-sig', errors='replace').replace('\x00', '')
+    sample = decoded[:2048]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=',;\t|')
+    except csv.Error:
+        dialect = csv.excel
+
+    reader = csv.DictReader(io.StringIO(decoded), dialect=dialect)
+    rows = [
+        {
+            normalize_csv_key(key): value
+            for key, value in row.items()
+            if normalize_csv_key(key) is not None
+        }
+        for row in reader
+    ]
+
+    if not rows:
+        request.session.pop('csv_rows_barcode', None)
+        return HttpResponse('<div class="alert alert-warning">CSV is empty.</div>')
+
+    validations = validate_csv_rows_barcode(rows)
+    if any(validation['errors'] for validation in validations):
+        request.session.pop('csv_rows_barcode', None)
+    else:
+        request.session['csv_rows_barcode'] = rows
+        request.session.modified = True
+
+    return render_csv_validation_response_barcode(file.name, validations)
+
+
+def upload_csv_confirm_barcode(request):
+    """Confirm and import barcode CSV data"""
+    rows = request.session.pop('csv_rows_barcode', [])
+    if not rows:
+        return HttpResponse('<div class="alert alert-danger">No data to import.</div>')
+
+    validations = validate_csv_rows_barcode(rows)
+    error_rows = [validation for validation in validations if validation['errors']]
+    if error_rows:
+        html = (
+            '<div class="alert alert-danger">'
+            'Import aborted. No rows were inserted.'
+            '</div><ul>'
+        )
+        for validation in error_rows[:20]:
+            html += '<li>Row {}: {}</li>'.format(
+                validation['row_number'],
+                ', '.join(validation['errors']),
+            )
+        if len(error_rows) > 20:
+            html += '<li>...and {} more row(s).</li>'.format(len(error_rows) - 20)
+        html += '</ul>'
+        return HttpResponse(html)
+
+    provider = get_import_provider()
+    if provider is None:
+        return HttpResponse(
+            '<div class="alert alert-danger">'
+            'Import aborted. No provider is available to create the purchase.'
+            '</div>'
+        )
+
+    try:
+        with transaction.atomic():
+            purchase = Purchase.objects.create(provider=provider)
+            for validation in validations:
+                purchaseItem.objects.create(
+                    product=validation['product'],
+                    purchase=purchase,
+                    quantity=validation['quantity'],
+                    cost=str(validation['cost']),
+                    date_created=timezone.now(),
+                    last_update=timezone.now(),
+                )
+    except (IntegrityError, ValueError, TypeError) as exc:
+        return HttpResponse(
+            '<div class="alert alert-danger">'
+            'Import aborted. No rows were inserted. Error: {}'
+            '</div>'.format(exc)
+        )
+
+    html = (
+        '<div class="alert alert-success">'
+        'Inserted {} new rows into purchase {}. Import completed successfully.'
+        '</div>'
+    ).format(len(validations), purchase.id)
+    html += '<table class="table table-sm table-bordered mt-3"><thead><tr><th>Barcode</th><th>Quantity</th></tr></thead><tbody>'
+    for validation in validations:
+        html += '<tr><td>{}</td><td>{}</td></tr>'.format(
+            validation['product'].barcode,
             validation['quantity'],
         )
     html += '</tbody></table>'

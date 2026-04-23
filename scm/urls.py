@@ -3,7 +3,7 @@ from django.urls import path
 
 #import 
 from scm.views.provider.views import providerList, providerCreate,providerEdit,providerDelete
-from scm.views.purchase.views import purchaseList, purchaseInicia,purchaseEdit,purchaseDelete,purchaseCreate,purchaseGetData,purchaseItemView,purchaseItemDelete,purchaseOrder,purchaseNew, upload_purchase_items,htmx_one,htmx_form,upload_csv,upload_csv_action,upload_csv_confirm
+from scm.views.purchase.views import purchaseList, purchaseInicia,purchaseEdit,purchaseDelete,purchaseCreate,purchaseGetData,purchaseItemView,purchaseItemDelete,purchaseOrder,purchaseNew, upload_purchase_items,htmx_one,htmx_form,upload_csv,upload_csv_action,upload_csv_confirm,upload_csv_barcode,upload_csv_action_barcode,upload_csv_confirm_barcode
 
 app_name='scm'
 urlpatterns=[
@@ -22,6 +22,9 @@ urlpatterns=[
         path('purchase/uploadcsv/',upload_csv,name='uploadcsv'),
         path('purchase/uploadcsv_action/',upload_csv_action,name='uploadcsv_action'),
         path('purchase/uploadcsv_confirm/', upload_csv_confirm, name='uploadcsv_confirm'),
+        path('purchase/uploadcsv/barcode/',upload_csv_barcode,name='uploadcsv_barcode'),
+        path('purchase/uploadcsv_action/barcode/',upload_csv_action_barcode,name='uploadcsv_action_barcode'),
+        path('purchase/uploadcsv_confirm/barcode/', upload_csv_confirm_barcode, name='uploadcsv_confirm_barcode'),
 
 
         path('purchase/create',purchaseCreate,name='purchasecreate'),
