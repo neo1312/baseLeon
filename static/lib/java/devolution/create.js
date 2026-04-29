@@ -13,7 +13,6 @@ const inputDetalle = document.getElementsByClassName("detalle")
 const totalFactura = document.getElementById("totalFactura")
 const input = document.getElementById('buscador')
 const autocomplete_result= document.getElementById('autocomplete-result')
-const devolution_id = document.getElementById('devolution_id') ? document.getElementById('devolution_id').value : null
 
 //traer datos de producto.
 btnCart.addEventListener("click",(e)=>{
@@ -26,24 +25,33 @@ btnCart.addEventListener("click",(e)=>{
 
 const traerData = (valorBtn)=>{
     let url = "/devolution/getdata"
+    const devolutionId = document.getElementById('devolution_id').value;
     fetch(url,{
         method:'POST',
         headers:{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify({'id':valorBtn, 'devolution_id':devolution_id})
+        body:JSON.stringify({'id':valorBtn, 'devolution_id': devolutionId})
     })
         .then((response)=>{
             return response.json();
         })
         .then((data)=>{
             console.log('data',data)
+            if (data.error) {
+                alert(data.error)
+                return
+            }
             arrayData=data.datos
             formselectProduct.value=arrayData[1]
             formselectCodigo.value=arrayData[0]
             formunitario.value=arrayData[2]
             formQuantity.value= 1
+        })
+        .catch((error) => {
+            console.error('Error:', error)
+            alert('Failed to fetch product data')
         })
     
 }
@@ -61,28 +69,67 @@ btnAdd.addEventListener("click",(e)=>{
 
 
 const registrarItem= (codigo,quantity)=>{
- console.log("heeeY")
+ console.log("Adding item to cart")
     let url = "/devolution/itemview"
+    const devolutionId = document.getElementById('devolution_id').value;
     fetch(url,{
         method:'POST',
         headers:{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify([codigo,quantity,devolution_id])
+        body:JSON.stringify([codigo, quantity, devolutionId])
     })
         .then((response)=>{
             return response.json();
         })
         .then((data)=>{
             console.log(data)
-            datos=data
-            if (typeof datos === 'object'){
-                if (datos.warning){
-                    console.warn(datos.warning)
-                    alert(datos.warning)
-                }
-            }
-            location.reload()
+		if (data === 'No hay stock suficiente'){
+			alert('No hay suficiente stock')
+		}
+		else if (typeof data === 'object' && data.warning){
+			alert(data.warning)
+			location.reload()
+		}
+		else if (data.message || data.success){
+			// Successfully added, reload to get updated items and totals
+			location.reload()
+		}
+		else {
+			alert('Error adding item')
+		}
         })
+        .catch((error) => {
+            console.error('Error:', error)
+            alert('Failed to add item')
+        })
+}
+
+//delete devolution items
+document.querySelectorAll('.deleteButton').forEach(button => {
+	button.addEventListener('click', function (){
+		const itemId = this.getAttribute('data-item-id');
+		console.log(itemId)
+
+		fetch(`/devolution/itemdelete/${itemId}/`,{
+			method: 'DELETE',
+			headers:{
+			'Content-Type':'application/json',
+            		'X-CSRFToken':csrftoken,
+			}
+		})
+		.then(response => response.json())
+			.then(data => {
+				if(data.success){
+				alert (data.message);
+				document.getElementById(`item-${itemId}`).remove();
+				totalFactura.value = data.cart_total
+				}else{
+					alert(data.message || "failed");
+				}
+			})
+			})
+})
+
 }

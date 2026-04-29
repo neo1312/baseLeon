@@ -30,9 +30,9 @@
                 <a href="/quote/pdfprint/{{ o.id }}" class="btn btn-secondary btn-xs btn-flat">
                     <i class="fas fa-print"></i>
                 </a>
-                <a href="#" onclick="convertQuoteToSale({{ o.id }}); return false;" class="btn btn-success btn-xs btn-flat">
+                <button onclick="convertQuoteToSale({{ o.id }})" class="btn btn-success btn-xs btn-flat" type="button">
                     <i class="fas fa-arrow-right"></i> Sale
-                </a>
+                </button>
             </td>
         </tr>
     {% endfor %}
@@ -40,6 +40,7 @@
 
 <script>
 function convertQuoteToSale(quoteId) {
+    console.log('Converting quote', quoteId);
     // Check stock before converting
     fetch(`/quote/check-stock/${quoteId}/`, {
         method: 'GET',
@@ -50,21 +51,27 @@ function convertQuoteToSale(quoteId) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Check stock response:', data);
         if (data.success) {
             // All stock available, proceed with conversion
+            alert('✓ Stock validated! Converting quote to sale...');
             window.location.href = `/quote/to-sale/${quoteId}/`;
         } else {
             // Show error with details
-            let message = 'Insufficient stock for the following products:\n\n';
-            data.details.forEach(item => {
-                message += `${item.product}:\n  Requested: ${item.requested}\n  Available: ${item.available}\n\n`;
-            });
+            let message = '✗ Insufficient stock for conversion:\n\n';
+            if (data.details && data.details.length > 0) {
+                data.details.forEach(item => {
+                    message += `${item.product}:\n  Required: ${item.requested}\n  Available: ${item.available}\n\n`;
+                });
+            } else {
+                message += data.error || 'Unknown error';
+            }
             alert(message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while checking stock');
+        alert('❌ An error occurred while checking stock:\n' + error.message);
     });
 }
 
