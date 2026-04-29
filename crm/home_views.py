@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 def home(request):
     """Home page - main dashboard"""
     if not request.user.is_authenticated:
-        return redirect('/login')
+        return redirect('/login/')
     return render(request, 'index.html', {})
 
 @csrf_exempt
@@ -33,4 +33,4 @@ def user_login(request):
 def user_logout(request):
     """User logout"""
     logout(request)
-    return redirect('/login')
+    return redirect('/login/')

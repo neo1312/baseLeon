@@ -11,8 +11,8 @@ from crm.views.devolution.views import devolutionList, devolutionEdit, devolutio
 
 app_name='crm'
 urlpatterns=[
-        path('login', user_login, name='login'),
-        path('logout', user_logout, name='logout'),
+        path('login/', user_login, name='login'),
+        path('logout/', user_logout, name='logout'),
         path('', home, name='home'),
         path('client/list',clientList,name='clientList'),
         path('client/create',clientCreate,name='clientCreate'),
