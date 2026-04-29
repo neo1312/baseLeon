@@ -551,21 +551,31 @@ def OrderItemSignalDevolutionSave(sender, instance, **kwargs):
             # Remove tier-based reward that was applied during the original sale
             try:
                 tier_status = cliente.tier_status
-                # Recalculate tier AFTER removing this devolution amount
+                # First, get the tier that the sale qualified for (BEFORE devolution removal)
+                # by calculating with the current sale amount (not the negative devolution)
+                tier_before_devolution = tier_status.get_current_tier(include_current_sale_amount=float(instance.get_total))
+                
+                if tier_before_devolution:
+                    # Use the reward percentage from the tier the sale qualified for
+                    monedero_percentaje = float(tier_before_devolution.wallet_percentage) / 100
+                else:
+                    monedero_percentaje = 0
+                    
+                # Now recalculate tier AFTER removing devolution for future transactions
                 tier_status.get_current_tier(include_current_sale_amount=-float(instance.get_total))
-                monedero_percentaje = tier_status.get_wallet_percentage() / 100
             except:
                 monedero_percentaje = 0
             
             if monedero_percentaje > 0:
                 # Remove the reward amount that was applied
-                reward_amount = float(instance.get_total) * monedero_percentaje
-                cliente.monedero = float(cliente.monedero) - reward_amount
+                from decimal import Decimal
+                reward_amount = Decimal(str(instance.get_total)) * Decimal(str(monedero_percentaje))
+                cliente.monedero = Decimal(str(cliente.monedero)) - reward_amount
                 if cliente.monedero < 0:
                     cliente.monedero = 0
                 cliente.save()
-                tier_name = cliente.tier_status.tier.get_name_display() if cliente.tier_status.tier else "None"
-                logger.info(f"Removed tier-based reward from devolution client {clientId}: ${reward_amount:.2f} (Tier: {tier_name}, New 30d total: ${cliente.tier_status.last_30_days_sales:.2f})")
+                tier_name = tier_before_devolution.get_name_display() if tier_before_devolution else "None"
+                logger.info(f"Removed tier-based reward from devolution client {clientId}: ${reward_amount:.2f} (Original Tier: {tier_name}, New 30d total: ${cliente.tier_status.last_30_days_sales:.2f})")
             else:
                 logger.info(f"Devolution for client {clientId}: no reward to remove (tier < Bronze or below minimum)")
 
