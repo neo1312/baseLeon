@@ -756,3 +756,15 @@ class ClientTierStatus(models.Model):
         verbose_name = 'Client Tier Status'
         verbose_name_plural = 'Client Tier Statuses'
         ordering = ['client']
+
+@receiver(post_save, sender=Client)
+def create_client_tier_status(sender, instance, created, **kwargs):
+    """Automatically create ClientTierStatus when a new client is created"""
+    if created:
+        # Get the bronze tier (lowest tier) as default
+        bronze_tier = ClientTier.objects.filter(name='bronze').first()
+        if bronze_tier:
+            ClientTierStatus.objects.get_or_create(
+                client=instance,
+                defaults={'tier': bronze_tier}
+            )
