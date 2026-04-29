@@ -320,8 +320,11 @@ def OrderItemSignal(sender, instance, created, **kwargs):
         clientId = instance.sale.client.id
         cliente = Client.objects.get(id=clientId)
         
-        # Only apply rewards for "menudeo" (retail) sales, not "mayoreo" (wholesale)
-        if instance.sale.monedero == False and instance.sale.tipo != 'mayoreo':
+        # Only apply rewards for "menudeo" (retail) clients and sales
+        # Skip completely for "mayoreo" (wholesale) clients
+        if cliente.tipo == 'mayoreo':
+            logger.info(f"Skipped reward for mayoreo client {clientId} - rewards only for menudeo clients")
+        elif instance.sale.monedero == False and instance.sale.tipo != 'mayoreo':
             # Get tier-based reward percentage
             # NOTE: include_current_sale_amount=0 because post_save fires AFTER item is saved to DB
             try:
@@ -773,9 +776,14 @@ class ClientTierStatus(models.Model):
 def create_client_tier_status(sender, instance, created, **kwargs):
     """Automatically create ClientTierStatus when a new client is created"""
     if created:
-        # Create tier status with no tier initially (None)
-        # Client will qualify for tier only after making purchases
-        ClientTierStatus.objects.get_or_create(
-            client=instance,
-            defaults={'tier': None, 'last_30_days_sales': 0}
-        )
+        # Only create tier status for menudeo clients
+        # Mayoreo (wholesale) clients don't get tier rewards
+        if instance.tipo == 'menudeo':
+            # Create tier status with no tier initially (None)
+            # Client will qualify for tier only after making purchases
+            ClientTierStatus.objects.get_or_create(
+                client=instance,
+                defaults={'tier': None, 'last_30_days_sales': 0}
+            )
+        else:
+            logger.info(f"Skipped tier status creation for mayoreo client {instance.id}")
