@@ -31,22 +31,24 @@
                         <li><a href="/quote/new" class="dropdown-item"><i class="fas fa-quote-left text-info"></i> Cotizaciones</a></li>
                         <li><a href="/devolution/new" class="dropdown-item"><i class="fas fa-undo text-warning"></i> Devoluciones</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a href="/purchase/uploadcsv/" class="dropdown-item"><i class="fas fa-upload text-secondary"></i> Importar Compras</a></li>
+                        <li><a href="/purchase/uploadcsv/" class="dropdown-item"><i class="fas fa-upload text-secondary"></i> Importar Compras (PV1)</a></li>
+                        <li><a href="/purchase/uploadcsv/barcode/" class="dropdown-item"><i class="fas fa-barcode text-secondary"></i> Importar Compras (Código)</a></li>
                         <li><a href="/report/sale" class="dropdown-item"><i class="fas fa-chart-bar text-success"></i> Reportes</a></li>
                     </ul>
                 </li>
             </ul>
         </div>
         <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
-            <li class="nav-item">
-                <a class="nav-link text-white" href="#" title="Configuración">
-                    <i class="fas fa-cog"></i>
+            <li class="nav-item dropdown">
+                <a id="dropdownUserMenu" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                   class="nav-link text-white font-weight-500">
+                    <i class="fas fa-user-circle mr-2"></i>{{ request.user.username }}
                 </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="#" title="Ayuda">
-                    <i class="fas fa-question-circle"></i>
-                </a>
+                <ul aria-labelledby="dropdownUserMenu" class="dropdown-menu dropdown-menu-right border-0 shadow" style="background: white;">
+                    <li><a href="/admin/" class="dropdown-item"><i class="fas fa-user-cog text-primary"></i> Mi Perfil</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a href="/logout/" class="dropdown-item"><i class="fas fa-sign-out-alt text-danger"></i> Cerrar Sesión</a></li>
+                </ul>
             </li>
         </ul>
     </div>

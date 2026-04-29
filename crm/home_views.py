@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 
 def home(request):
@@ -29,3 +29,8 @@ def user_login(request):
             return render(request, 'login.html', {'error': error})
     
     return render(request, 'login.html', {})
+
+def user_logout(request):
+    """User logout"""
+    logout(request)
+    return redirect('/login')
