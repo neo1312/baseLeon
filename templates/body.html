@@ -1,38 +1,41 @@
 {% extends 'home.html' %}
 {% block body %}
-    <body class="hold-transition layout-top-nav">
+    <body class="hold-transition layout-top-nav" style="background-color: #f5f5f5;">
     <div class="wrapper">
         <!-- Header -->
         {% include 'header.html' %}
         <!-- Content -->
-        <div class="content-wrapper">
-            <div class="content-header">
+        <div class="content-wrapper" style="background-color: #f5f5f5;">
+            <div class="content-header border-bottom" style="background-color: white;">
                 <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0 text-dark">Ferreteria Leon </h1>
+                    <div class="row mb-3">
+                        <div class="col-sm-8">
+                            <div class="d-flex align-items-center">
+                                <h1 class="m-0 text-dark font-weight-bold" style="font-size: 1.8rem;">
+                                    <i class="fas fa-building mr-2" style="color: #0066cc;"></i>Ferretería León
+                                </h1>
+                            </div>
                         </div>
-                        <div class="col-sm-6">
-				
-                            <ol class="breadcrumb float-sm-right">
-				    <li class="breadcrumb-item"><a href="{{homeUrl}}">{{home}}</a></li>
-				<li class="breadcrumb-item"><a href="{{entityUrl}}">{{entity}}</a></li>
+                        <div class="col-sm-4">
+                            <ol class="breadcrumb float-sm-right mb-0">
+                                <li class="breadcrumb-item"><a href="{{homeUrl}}" class="text-primary"><i class="fas fa-home"></i> {{home}}</a></li>
+                                <li class="breadcrumb-item active"><a href="{{entityUrl}}" class="text-secondary">{{entity}}</a></li>
                             </ol>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="">
-                <div class="">
-
-				<div class="">
-            <h3 class="card-title">
-                {{ title }}
-            </h3>
-        	</div>
-                    {% block content %}
-
-                    {% endblock %}
+            <div class="content pt-4">
+                <div class="container-fluid">
+                    <div class="card border-top-4 shadow-sm" style="border-top: 4px solid #0066cc;">
+                        <div class="card-header bg-light border-bottom-0 pt-3 pb-2">
+                            <h3 class="card-title font-weight-bold text-dark mb-0">
+                                <i class="fas fa-list mr-2 text-primary"></i>{{ title }}
+                            </h3>
+                        </div>
+                        {% block content %}
+                        {% endblock %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -44,4 +47,3 @@
     {%block javascrip%}
     {%endblock%}
 {% endblock %}
-

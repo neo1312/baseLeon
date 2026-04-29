@@ -7,7 +7,7 @@ from xhtml2pdf import pisa
 from django.views.decorators.csrf import csrf_exempt
 
 #import 
-from crm.models import Quote,Client ,Product,quoteItem
+from crm.models import Quote,Client ,Product,quoteItem,Sale,saleItem
 from crm.forms import quoteForm 
 from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
@@ -100,8 +100,15 @@ def quoteGetData(request):
     if request.method == 'POST':
         call= json.loads(request.body)
         pk=call['id']
+        quote_id = call.get('quote_id')
+        
         qs=Product.objects.get(barcode=pk)
-        quote=Quote.objects.last()
+        
+        if not quote_id:
+            quote=Quote.objects.last()
+        else:
+            quote=Quote.objects.get(id=quote_id)
+            
         if quote.tipo=='menudeo':
             name = [qs.id,qs.name,qs.priceLista]
         else:
@@ -115,9 +122,11 @@ def quoteInicia(request):
         clientId=int(call['id'])
         cliente=Client.objects.get(id=clientId)
         monedero=call['monedero']
+        tipo=call.get('tipo', 'menudeo')
         print (clientId)
         print (monedero)
-        quote=Quote.objects.create(client=cliente,monedero=monedero)
+        print (tipo)
+        quote=Quote.objects.create(client=cliente,monedero=monedero,tipo=tipo)
         quote.save()
         print(quote.id)
         return JsonResponse({'datos':quote.id},safe=False)
@@ -128,7 +137,13 @@ def quoteInicia(request):
 def quoteItemView(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        quote=Quote.objects.first()
+        quote_id = data[2] if len(data) > 2 else None
+        
+        if not quote_id:
+            quote=Quote.objects.first()
+        else:
+            quote=Quote.objects.get(id=quote_id)
+        
         pk=int(data[0])
         quantity=data[1]
         product=Product.objects.get(id=pk)
@@ -148,8 +163,12 @@ def quoteItemView(request):
                 margen=product.margen
         
         stockActual=(Product.objects.get(id=pk)).stock
-#        if float(quantity) > stockActual:
-#            return JsonResponse('No hay stock suficiente', safe=False)
+        
+        # Check if stock is low and add warning
+        warning = None
+        if float(quantity) > stockActual:
+            warning = f"Low stock warning: {product.name} only has {stockActual} units, but {quantity} were requested"
+        
         itemsquote=quote.quoteitem_set.all()
         outputlist=list(filter(lambda x:x.product.id==pk,itemsquote))
         print(stockActual)
@@ -158,10 +177,10 @@ def quoteItemView(request):
             quantity=int(repetido.quantity)+int(quantity)
             quoteItem.objects.filter(id=repetido.id).delete()
             quoteItem.objects.create(product=product,quote=quote,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
-            return JsonResponse('se sumaron',safe=False)
+            return JsonResponse({'message': 'se sumaron', 'warning': warning},safe=False)
         else:
             quoteItem.objects.create(product=product,quote=quote,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
-            return JsonResponse('creo nuevo registro',safe=False)
+            return JsonResponse({'message': 'creo nuevo registro', 'warning': warning},safe=False)
 
 @csrf_exempt
 def quoteItemDelete(request,pk):
@@ -241,3 +260,77 @@ def quoteLast(request):
     if pisa_status.err:
        return HttpResponse('We had some errors <pre>' + html + '</pre>')
     return response
+
+@csrf_exempt
+def quoteToSale(request, quote_id):
+    """Convert a quote to a sale by copying all items from the quote to a new sale."""
+    quote = get_object_or_404(Quote, id=quote_id)
+    
+    # Check if all items have sufficient stock
+    quote_items = quote.quoteitem_set.all()
+    insufficient_stock = []
+    
+    for quote_item in quote_items:
+        if quote_item.product.stock < float(quote_item.quantity):
+            insufficient_stock.append({
+                'product': quote_item.product.name,
+                'requested': quote_item.quantity,
+                'available': quote_item.product.stock
+            })
+    
+    if insufficient_stock:
+        # Return error response if stock is insufficient
+        return JsonResponse({
+            'success': False,
+            'error': 'Insufficient stock for some products',
+            'details': insufficient_stock
+        }, status=400)
+    
+    # Create a new sale with the same client and settings as the quote
+    sale = Sale.objects.create(
+        client=quote.client,
+        tipo=quote.tipo,
+        monedero=quote.monedero
+    )
+    sale.save()
+    
+    # Copy all items from quote to sale
+    for quote_item in quote_items:
+        saleItem.objects.create(
+            product=quote_item.product,
+            sale=sale,
+            quantity=quote_item.quantity,
+            cost=quote_item.cost,
+            margen=quote_item.margen,
+            monedero=quote_item.monedero
+        )
+    
+    # Redirect to the sale creation/edit page
+    return redirect(f'/sale/create/{sale.id}/')
+
+@csrf_exempt
+def quoteCheckStock(request, quote_id):
+    """Check if all items in quote have sufficient stock."""
+    quote = get_object_or_404(Quote, id=quote_id)
+    quote_items = quote.quoteitem_set.all()
+    insufficient_stock = []
+    
+    for quote_item in quote_items:
+        if quote_item.product.stock < float(quote_item.quantity):
+            insufficient_stock.append({
+                'product': quote_item.product.name,
+                'requested': float(quote_item.quantity),
+                'available': float(quote_item.product.stock)
+            })
+    
+    if insufficient_stock:
+        return JsonResponse({
+            'success': False,
+            'error': 'Insufficient stock for some products',
+            'details': insufficient_stock
+        }, status=400)
+    else:
+        return JsonResponse({
+            'success': True,
+            'message': 'All items have sufficient stock'
+        })

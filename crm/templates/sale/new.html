@@ -2,39 +2,54 @@
 
 {%block botones%}
 
-<div class="container my-4">
-  <div class="row g-3 align-items-end">   <!-- g-3 = gap between cols -->
-
-    <!-- 1. Cliente -->
-    <div class="col-md-4">
-      <label for="clientId" class="form-label fw-bold">Seleccionar cliente</label>
-      <select class="form-select" id="clientId" name="clientId">
-        <option value="">Seleccione un cliente</option>
-        {% for client in clients %}
-          <option value="{{ client.id }}">{{ client.name }}</option>
-        {% endfor %}
-      </select>
-      <small class="form-text text-muted">Por defecto: "Mostrador".</small>
+<div class="container-fluid my-4">
+  <div class="card border-primary shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Nueva Venta</h5>
     </div>
+    <div class="card-body">
+      <div class="row g-3">
 
-    <!-- 2. Tipo de venta -->
-    <div class="col-md-4">
-      <label for="tipoVenta" class="form-label fw-bold">Tipo de venta</label>
-      <select id="tipoVenta" class="form-select">
-        <option value="mayoreo">Mayoreo</option>
-        <option value="menudeo" selected>Menudeo</option>
-      </select>
+        <!-- 1. Cliente -->
+        <div class="col-md-4">
+          <label for="clientId" class="form-label fw-bold">
+            <i class="fas fa-user"></i> Seleccionar cliente
+          </label>
+          <select class="form-select form-select-lg" id="clientId" name="clientId">
+            <option value="">-- Seleccione un cliente --</option>
+            {% for client in clients %}
+              <option value="{{ client.id }}">{{ client.name }}</option>
+            {% endfor %}
+          </select>
+          <small class="form-text text-muted d-block mt-2">Por defecto: "Mostrador" (Cliente ID: 1)</small>
+        </div>
+
+        <!-- 2. Tipo de venta -->
+        <div class="col-md-4">
+          <label for="tipoVenta" class="form-label fw-bold">
+            <i class="fas fa-tag"></i> Tipo de venta
+          </label>
+          <select id="tipoVenta" class="form-select form-select-lg">
+            <option value="menudeo" selected>Menudeo</option>
+            <option value="mayoreo">Mayoreo</option>
+          </select>
+          <small class="form-text text-muted d-block mt-2">Menudeo: precios unitarios | Mayoreo: precios al por mayor</small>
+        </div>
+
+        <!-- 3. Monedero -->
+        <div class="col-md-4">
+          <label for="btnMonedero" class="form-label fw-bold">
+            <i class="fas fa-wallet"></i> Uso de monedero
+          </label>
+          <select class="form-select form-select-lg" id="btnMonedero">
+            <option value="0" selected>No monedero</option>
+            <option value="1">Compra con monedero</option>
+          </select>
+          <small class="form-text text-muted d-block mt-2">Aplicar saldo del cliente en la compra</small>
+        </div>
+
+      </div>
     </div>
-
-    <!-- 3. Monedero -->
-    <div class="col-md-4">
-      <lbel for="btnMonedero" class="form-label fw-bold">Uso de monedero</label>
-      <select class="form-select" id="btnMonedero">
-        <option value="0">No monedero</option>
-        <option value="1">Compra con monedero</option>
-      </select>
-    </div>
-
   </div>
 </div>
 

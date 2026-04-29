@@ -2,14 +2,16 @@
 from django.urls import path
 
 #import 
+from crm.home_views import home
 from crm.views.client.views import clientList, clientCreate,clientEdit,clientDelete
 from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,salepdfPrint,saleNew,saleLast,saleCreateNew,sale_ticket_json,print_ticket_view,saleItemUpdateQuantity
-from crm.views.quote.views import quoteList, quoteInicia,quoteEdit,quoteDelete,quoteCreate,quoteGetData,quoteItemView,quoteItemDelete,quotepdfPrint,quoteNew,quoteLast
+from crm.views.quote.views import quoteList, quoteInicia,quoteEdit,quoteDelete,quoteCreate,quoteGetData,quoteItemView,quoteItemDelete,quotepdfPrint,quoteNew,quoteLast,quoteToSale,quoteCheckStock
 from crm.views.devolution.views import devolutionList, devolutionEdit, devolutionDelete, devolutionCreate,devolutionInicia,devolutionItemView,devolutionGetData,devolutionItemDelete,devpdfPrint,devolutionNew
 
 
 app_name='crm'
 urlpatterns=[
+        path('', home, name='home'),
         path('client/list',clientList,name='clientList'),
         path('client/create',clientCreate,name='clientCreate'),
         path('client/edit/<int:pk>/',clientEdit, name='clientEdit'),
@@ -37,6 +39,8 @@ urlpatterns=[
         path('quote/list',quoteList,name='quoteList'),
         path('quote/new',quoteNew,name='quoteNew'),
         path('quote/create/<int:quote_id>/',quoteCreate,name='quoteCreate'),
+        path('quote/to-sale/<int:quote_id>/',quoteToSale,name='quoteToSale'),
+        path('quote/check-stock/<int:quote_id>/',quoteCheckStock,name='quoteCheckStock'),
         path('quote/inicia',quoteInicia,name='quoteInicia'),
         path('quote/getdata',quoteGetData,name='quoteGetData'),
         path('quote/edit/<int:pk>/',quoteEdit, name='quoteEdit'),
@@ -55,7 +59,7 @@ urlpatterns=[
         path('devolution/new',devolutionNew,name='devolutionNew'),
         path('devolution/edit/<int:pk>/',devolutionEdit, name='devolutionEdit'),
         path('devolution/delete/<int:pk>/',devolutionDelete,name='devolutionDelete'),
-        path('devolution/create',devolutionCreate,name='devolutionCreate'),
+        path('devolution/create/<int:devolution_id>/',devolutionCreate,name='devolutionCreate'),
         path('devolution/inicia',devolutionInicia,name='devolutionInicia'),
         path('devolution/itemview',devolutionItemView,name='devolutionItemView'),
         path('devolution/getdata',devolutionGetData,name='devolutionGetData'),

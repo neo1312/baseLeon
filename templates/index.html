@@ -1,5 +1,233 @@
-{% extends 'body.html' %}
+{% extends 'home.html' %}
+{% load static %}
 
-{% block content %}
+{% block head %}
+<style>
+    .dashboard-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding-top: 20px;
+    }
+    
+    .welcome-section {
+        background: white;
+        border-radius: 10px;
+        padding: 40px;
+        margin-bottom: 40px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .welcome-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #0066cc;
+        margin-bottom: 10px;
+    }
+    
+    .welcome-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+    }
+    
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .menu-card {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        border-top: 4px solid #ddd;
+    }
+    
+    .menu-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .menu-card.sales { border-top-color: #0066cc; }
+    .menu-card.quotes { border-top-color: #00a8cc; }
+    .menu-card.devolutions { border-top-color: #ffb700; }
+    .menu-card.products { border-top-color: #00cc96; }
+    .menu-card.clients { border-top-color: #ff006e; }
+    .menu-card.purchases { border-top-color: #ff5c93; }
+    .menu-card.providers { border-top-color: #fb5607; }
+    .menu-card.categories { border-top-color: #8338ec; }
+    .menu-card.reports { border-top-color: #3a86ff; }
+    
+    .menu-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+    }
+    
+    .menu-card.sales .menu-icon { color: #0066cc; }
+    .menu-card.quotes .menu-icon { color: #00a8cc; }
+    .menu-card.devolutions .menu-icon { color: #ffb700; }
+    .menu-card.products .menu-icon { color: #00cc96; }
+    .menu-card.clients .menu-icon { color: #ff006e; }
+    .menu-card.purchases .menu-icon { color: #ff5c93; }
+    .menu-card.providers .menu-icon { color: #fb5607; }
+    .menu-card.categories .menu-icon { color: #8338ec; }
+    .menu-card.reports .menu-icon { color: #3a86ff; }
+    
+    .menu-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .menu-description {
+        font-size: 0.9rem;
+        color: #999;
+    }
+    
+    .container-full {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+</style>
+{% endblock %}
 
+{% block body %}
+<body class="dashboard-container">
+    <div class="wrapper">
+        {% include 'header.html' %}
+        
+        <div class="content-wrapper" style="background-color: transparent;">
+            <div class="content pt-4">
+                <div class="container-full">
+                    <!-- Welcome Section -->
+                    <div class="welcome-section">
+                        <h1 class="welcome-title">
+                            <i class="fas fa-hammer mr-3"></i>Bienvenido a Ferretería León
+                        </h1>
+                        <p class="welcome-subtitle">Sistema de Gestión de Ventas, Cotizaciones y Devoluciones</p>
+                        <hr class="my-3">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Selecciona una opción del menú a continuación para comenzar
+                        </p>
+                    </div>
+                    
+                    <!-- Main Operations -->
+                    <h3 class="text-white font-weight-bold mb-3">
+                        <i class="fas fa-arrow-right mr-2"></i>Operaciones Principales
+                    </h3>
+                    <div class="menu-grid">
+                        <a href="/sale/new" class="menu-card sales">
+                            <i class="fas fa-shopping-cart menu-icon"></i>
+                            <div class="menu-title">Crear Venta</div>
+                            <div class="menu-description">Nueva venta a cliente</div>
+                        </a>
+                        
+                        <a href="/quote/new" class="menu-card quotes">
+                            <i class="fas fa-quote-left menu-icon"></i>
+                            <div class="menu-title">Crear Cotización</div>
+                            <div class="menu-description">Nueva cotización o presupuesto</div>
+                        </a>
+                        
+                        <a href="/devolution/new" class="menu-card devolutions">
+                            <i class="fas fa-undo menu-icon"></i>
+                            <div class="menu-title">Crear Devolución</div>
+                            <div class="menu-description">Devolución de productos</div>
+                        </a>
+                        
+                        <a href="/purchase/new" class="menu-card purchases">
+                            <i class="fas fa-shopping-bag menu-icon"></i>
+                            <div class="menu-title">Crear Compra</div>
+                            <div class="menu-description">Nueva compra a proveedor</div>
+                        </a>
+                    </div>
+                    
+                    <!-- Listings -->
+                    <h3 class="text-white font-weight-bold mb-3 mt-4">
+                        <i class="fas fa-list mr-2"></i>Ver Registros
+                    </h3>
+                    <div class="menu-grid">
+                        <a href="/sale/list" class="menu-card sales">
+                            <i class="fas fa-receipt menu-icon"></i>
+                            <div class="menu-title">Ventas</div>
+                            <div class="menu-description">Listado de todas las ventas</div>
+                        </a>
+                        
+                        <a href="/quote/list" class="menu-card quotes">
+                            <i class="fas fa-file-alt menu-icon"></i>
+                            <div class="menu-title">Cotizaciones</div>
+                            <div class="menu-description">Listado de cotizaciones</div>
+                        </a>
+                        
+                        <a href="/devolution/list" class="menu-card devolutions">
+                            <i class="fas fa-history menu-icon"></i>
+                            <div class="menu-title">Devoluciones</div>
+                            <div class="menu-description">Historial de devoluciones</div>
+                        </a>
+                    </div>
+                    
+                    <!-- Catalog & Management -->
+                    <h3 class="text-white font-weight-bold mb-3 mt-4">
+                        <i class="fas fa-cogs mr-2"></i>Catálogo y Gestión
+                    </h3>
+                    <div class="menu-grid">
+                        <a href="/product/list" class="menu-card products">
+                            <i class="fas fa-boxes menu-icon"></i>
+                            <div class="menu-title">Productos</div>
+                            <div class="menu-description">Gestionar inventario de productos</div>
+                        </a>
+                        
+                        <a href="/category/list" class="menu-card categories">
+                            <i class="fas fa-tags menu-icon"></i>
+                            <div class="menu-title">Categorías</div>
+                            <div class="menu-description">Categorías de productos</div>
+                        </a>
+                        
+                        <a href="/client/list" class="menu-card clients">
+                            <i class="fas fa-users menu-icon"></i>
+                            <div class="menu-title">Clientes</div>
+                            <div class="menu-description">Gestionar clientes</div>
+                        </a>
+                        
+                        <a href="/provider/list" class="menu-card providers">
+                            <i class="fas fa-truck menu-icon"></i>
+                            <div class="menu-title">Proveedores</div>
+                            <div class="menu-description">Gestionar proveedores</div>
+                        </a>
+                    </div>
+                    
+                    <!-- Reports & Tools -->
+                    <h3 class="text-white font-weight-bold mb-3 mt-4">
+                        <i class="fas fa-chart-bar mr-2"></i>Reportes y Herramientas
+                    </h3>
+                    <div class="menu-grid">
+                        <a href="/report/sale" class="menu-card reports">
+                            <i class="fas fa-chart-line menu-icon"></i>
+                            <div class="menu-title">Reportes</div>
+                            <div class="menu-description">Reportes de ventas y análisis</div>
+                        </a>
+                        
+                        <a href="/purchase/uploadcsv/" class="menu-card purchases">
+                            <i class="fas fa-upload menu-icon"></i>
+                            <div class="menu-title">Importar Compras</div>
+                            <div class="menu-description">Importar datos de compras (CSV)</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% include 'footer.html' %}
+    </div>
+</body>
 {% endblock %}

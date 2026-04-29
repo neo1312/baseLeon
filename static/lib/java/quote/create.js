@@ -12,8 +12,7 @@ const inputDetalle = document.getElementsByClassName("detalle")
 const totalFactura = document.getElementById("totalFactura")
 const input = document.getElementById('buscador')
 const autocomplete_result= document.getElementById('autocomplete-result')
-
-
+const quote_id = document.getElementById('quote_id') ? document.getElementById('quote_id').value : null
 
 //traer datos de producto.
 btnCart.addEventListener("click",(e)=>{
@@ -32,7 +31,7 @@ const traerData = (valorBtn)=>{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify({'id':valorBtn})
+        body:JSON.stringify({'id':valorBtn, 'quote_id':quote_id})
     })
         .then((response)=>{
             return response.json();
@@ -69,47 +68,20 @@ const registrarItem= (codigo,quantity)=>{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify([codigo,quantity])
+        body:JSON.stringify([codigo,quantity,quote_id])
     })
         .then((response)=>{
             return response.json();
         })
         .then((data)=>{
             console.log(data)
-		datos=data
-		if (datos =='No hay stock suficiente'){
-			alert('No hay suficiente stock')
-		}
-		else{
-			console.log('hubo errooor')
-			location.reload()
-		} 
+            datos=data
+            if (typeof datos === 'object'){
+                if (datos.warning){
+                    console.warn(datos.warning)
+                    alert(datos.warning)
+                }
+            }
+            location.reload()
         })
-}
-
-//delete quote items
-document.querySelectorAll('.deleteButton').forEach(button => {
-	button.addEventListener('click', function (){
-		const itemId = this.getAttribute('data-item-id');
-		console.log(itemId)
-
-		fetch(`/quote/itemdelete/${itemId}/`,{
-			method: 'DELETE',
-			headers:{
-			'Content-Type':'application/json',
-            		'X-CSRFToken':csrftoken,
-			}
-		})
-		.then(response => response.json())
-			.then(data => {
-				if(data.success){
-				alert (data.message);
-				document.getElementById(`item-${itemId}`).remove();
-				totalFactura.value = data.cart_total
-				}else{
-					alert(data.message || "failed");
-				}
-			})
-			})
-})
 }

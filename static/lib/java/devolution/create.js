@@ -12,8 +12,7 @@ const inputDetalle = document.getElementsByClassName("detalle")
 const totalFactura = document.getElementById("totalFactura")
 const input = document.getElementById('buscador')
 const autocomplete_result= document.getElementById('autocomplete-result')
-
-
+const devolution_id = document.getElementById('devolution_id') ? document.getElementById('devolution_id').value : null
 
 //traer datos de producto.
 btnCart.addEventListener("click",(e)=>{
@@ -32,7 +31,7 @@ const traerData = (valorBtn)=>{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify({'id':valorBtn})
+        body:JSON.stringify({'id':valorBtn, 'devolution_id':devolution_id})
     })
         .then((response)=>{
             return response.json();
@@ -51,7 +50,7 @@ const traerData = (valorBtn)=>{
 //resgistrar orderItems
 btnAdd.addEventListener("click",(e)=>{
     e.preventDefault();
-    let quantity= document.getElementById("quantity")
+    quantity= document.getElementById("quantity")
     let codigo= document.getElementById("codigo")
     codigo=codigo.value
     quantity=quantity.value
@@ -61,6 +60,7 @@ btnAdd.addEventListener("click",(e)=>{
 
 
 const registrarItem= (codigo,quantity)=>{
+ console.log("heeeY")
     let url = "/devolution/itemview"
     fetch(url,{
         method:'POST',
@@ -68,21 +68,20 @@ const registrarItem= (codigo,quantity)=>{
             'Content-Type':'application/json',
             'X-CSRFToken':csrftoken,
         },
-        body:JSON.stringify([codigo,quantity])
+        body:JSON.stringify([codigo,quantity,devolution_id])
     })
         .then((response)=>{
             return response.json();
         })
         .then((data)=>{
             console.log(data)
-		datos=data
-		if (datos =='No hay stock suficiente'){
-			alert('No hay suficiente stock')
-		}
-		else{
-			console.log('naaaaaa')
-			location.reload()
-		} 
+            datos=data
+            if (typeof datos === 'object'){
+                if (datos.warning){
+                    console.warn(datos.warning)
+                    alert(datos.warning)
+                }
+            }
+            location.reload()
         })
-}
 }

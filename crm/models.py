@@ -388,10 +388,14 @@ def OrderItemSignalDelete(sender,instance,**kwargs):
 
 
 class Devolution(models.Model):
-    
+    tipos=[
+            ('menudeo','menudeo'),
+            ('mayoreo','mayoreo')
+            ]
     #basic fields
     id=models.AutoField(primary_key=True,verbose_name='id')
     client= models.ForeignKey(Client, on_delete=models.SET_NULL, null=True,default='mostrador')
+    tipo=models.CharField(choices=tipos,max_length=100,default='menudeo')
     monedero=models.BooleanField(default=False)
     
     #utility fields

@@ -2,6 +2,7 @@ window.onload=function(){
 const clientId = document.getElementById('clientId');
 const btnOrder = document.getElementById('btnOrderList');
 const btnMonedero = document.getElementById('btnMonedero');
+const tipoVenta = document.getElementById('tipoVenta');
 
 
 btnOrder.addEventListener('click',(e)=>{
@@ -12,8 +13,10 @@ btnOrder.addEventListener('click',(e)=>{
 	console.log("client id from button click:")
 	console.log(clientId.value)
 	console.log(btnMonedero.value)
+	console.log(tipoVenta.value)
 	let client = clientId.value;
 	let monedero = btnMonedero.value;
+	let tipo = tipoVenta.value;
 	let url = "/quote/inicia"
 	
 	fetch(url,{
@@ -22,7 +25,7 @@ btnOrder.addEventListener('click',(e)=>{
 			'Content-Type':'application/json',
             		'X-CSRFToken':csrftoken,
 			},
-	   	body:JSON.stringify({'id':client,'monedero':monedero})
+	   	body:JSON.stringify({'id':client,'monedero':monedero,'tipo':tipo})
     			   })
 		.then((response)=>{
 			return response.json();

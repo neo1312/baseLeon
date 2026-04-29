@@ -60,13 +60,14 @@ def devolutionDelete(request,pk):
     return render(request,  'devolution/delete.html',context)
 
 @csrf_exempt
-def devolutionCreate(request):
-    devolution=Devolution.objects.last()
+def devolutionCreate(request, devolution_id):
+    devolution=get_object_or_404(Devolution,id=devolution_id)
     items=devolution.devolutionitem_set.all()
     context={
             'url_js':'/static/lib/java/devolution/create.js',
             'items':items,
-            'total':devolution,
+            'devolution':devolution,
+            'total':devolution.get_cart_total,
             'returnList':'/devolution/list',
             'returnCreate':'/devolution/new'
             }
@@ -78,18 +79,23 @@ def devolutionInicia(request):
         call=json.loads(request.body)
         clienteId=int(call['id'])
         monedero=call['monedero']
+        tipo=call.get('tipo', 'menudeo')
         client=Client.objects.get(id=clienteId)
-        devolution=Devolution.objects.create(client=client,monedero=monedero)
+        devolution=Devolution.objects.create(client=client,monedero=monedero,tipo=tipo)
         devolution.save()
-        return JsonResponse('devolucion Registrada',safe=False)
+        return JsonResponse({'datos':devolution.id},safe=False)
 
 @csrf_exempt
 def devolutionGetData(request):
     if request.method == 'POST':
         call= json.loads(request.body)
         pk=call['id']
+        devolution_id=call.get('devolution_id')
         qs=Product.objects.get(barcode=pk)
-        devolution=Devolution.objects.last()
+        if devolution_id:
+            devolution=Devolution.objects.get(id=devolution_id)
+        else:
+            devolution=Devolution.objects.last()
         name = [qs.id,qs.name,qs.priceLista]
         return JsonResponse({'datos':name},safe=False)
 
@@ -97,7 +103,11 @@ def devolutionGetData(request):
 def devolutionItemView(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        devolution=Devolution.objects.last()
+        devolution_id=data[2] if len(data) > 2 else None
+        if devolution_id:
+            devolution=Devolution.objects.get(id=devolution_id)
+        else:
+            devolution=Devolution.objects.last()
         pk=int(data[0])
         quantity=data[1]
         print(pk)
@@ -167,9 +177,11 @@ def devpdfPrint(request,pk):
     return response
 
 @csrf_exempt
+@csrf_exempt
 def devolutionNew(request):
+    clients = Client.objects.all()
+    default_client_id=1
     data = {
-
             'devolution_create':'/devolution/create',
             'entityUrl':'/devolution/list',
             'title' : 'Devoluciones',
@@ -180,6 +192,8 @@ def devolutionNew(request):
             'btnId':'btnOrderList',
             'home':'home',
             'newBtn':'Devolucion',
+            'clients':clients,
+            'default_client_id':default_client_id
             }
  
     return render(request, 'devolution/new.html', data)

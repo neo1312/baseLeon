@@ -30,8 +30,57 @@
                 <a href="/quote/pdfprint/{{ o.id }}" class="btn btn-secondary btn-xs btn-flat">
                     <i class="fas fa-print"></i>
                 </a>
+                <a href="#" onclick="convertQuoteToSale({{ o.id }}); return false;" class="btn btn-success btn-xs btn-flat">
+                    <i class="fas fa-arrow-right"></i> Sale
+                </a>
             </td>
         </tr>
     {% endfor %}
 {% endblock %}
+
+<script>
+function convertQuoteToSale(quoteId) {
+    // Check stock before converting
+    fetch(`/quote/check-stock/${quoteId}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // All stock available, proceed with conversion
+            window.location.href = `/quote/to-sale/${quoteId}/`;
+        } else {
+            // Show error with details
+            let message = 'Insufficient stock for the following products:\n\n';
+            data.details.forEach(item => {
+                message += `${item.product}:\n  Requested: ${item.requested}\n  Available: ${item.available}\n\n`;
+            });
+            alert(message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while checking stock');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 

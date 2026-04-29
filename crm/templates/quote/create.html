@@ -18,10 +18,10 @@
             <td>{{ p.precioUnitario|floatformat:3}}</td>
             <td>{{ p.get_total|floatformat:2}}</td>
             <td>
-		    <a href="#"  class="btn btn-danger btn-xs btn-flat  deleteButton" data-item-id="{{p.id}}">
+    <a href="#"  class="btn btn-danger btn-xs btn-flat  deleteButton" data-item-id="{{p.id}}">
                             <i class="fas fa-trash-alt"></i>Delete</a> 
             </td>
         </tr>
     {% endfor %}
+    <input type="hidden" id="quote_id" value="{{ quote.id }}" />
 {% endblock %}
-
