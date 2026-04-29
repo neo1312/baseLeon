@@ -20,48 +20,52 @@
             <td>$ {{ o.get_cart_total|floatformat:2 }}</td>
             <td>{{ o.date_created }}</td>
             <td>
-<!--                <a href="/quote/edit/{{ o.id }}" class="btn btn-warning btn-xs btn-flat">
-                    <i class="fas fa-edit"></i>
-</a> 
-                <a href="/quote/delete/{{ o.id }}" class="btn btn-danger btn-xs btn-flat">
-                    <i class="fas fa-trash-alt"></i>
-                </a>
-		-->
                 <a href="/quote/pdfprint/{{ o.id }}" class="btn btn-secondary btn-xs btn-flat">
                     <i class="fas fa-print"></i>
                 </a>
-                <button onclick="convertQuoteToSale({{ o.id }})" class="btn btn-success btn-xs btn-flat" type="button">
+                <a href="#" class="btn btn-success btn-xs btn-flat quote-to-sale-btn" data-quote-id="{{ o.id }}">
                     <i class="fas fa-arrow-right"></i> Sale
-                </button>
+                </a>
             </td>
         </tr>
     {% endfor %}
 {% endblock %}
 
 <script>
+document.querySelectorAll('.quote-to-sale-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const quoteId = this.getAttribute('data-quote-id');
+        convertQuoteToSale(quoteId);
+    });
+});
+
 function convertQuoteToSale(quoteId) {
-    console.log('Converting quote', quoteId);
+    console.log('Converting quote ' + quoteId);
+    
     // Check stock before converting
-    fetch(`/quote/check-stock/${quoteId}/`, {
+    fetch('/quote/check-stock/' + quoteId + '/', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken'),
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Check stock response:', data);
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        console.log('Stock check response:', data);
         if (data.success) {
             // All stock available, proceed with conversion
-            alert('✓ Stock validated! Converting quote to sale...');
-            window.location.href = `/quote/to-sale/${quoteId}/`;
+            alert('✓ Stock validated! Converting quote ' + quoteId + ' to sale...');
+            window.location.href = '/quote/to-sale/' + quoteId + '/';
         } else {
             // Show error with details
-            let message = '✗ Insufficient stock for conversion:\n\n';
+            var message = '✗ Cannot convert quote - insufficient stock:\n\n';
             if (data.details && data.details.length > 0) {
-                data.details.forEach(item => {
-                    message += `${item.product}:\n  Required: ${item.requested}\n  Available: ${item.available}\n\n`;
+                data.details.forEach(function(item) {
+                    message += item.product + ':\n  Required: ' + item.requested + '\n  Available: ' + item.available + '\n\n';
                 });
             } else {
                 message += data.error || 'Unknown error';
@@ -69,9 +73,9 @@ function convertQuoteToSale(quoteId) {
             alert(message);
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         console.error('Error:', error);
-        alert('❌ An error occurred while checking stock:\n' + error.message);
+        alert('❌ Error checking stock: ' + error.message);
     });
 }
 

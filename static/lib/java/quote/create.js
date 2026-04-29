@@ -70,40 +70,36 @@ btnAdd.addEventListener("click",(e)=>{
 
 const registrarItem= (codigo,quantity)=>{
  console.log("Adding item to cart")
-    let url = "/quote/itemview"
-    const quoteId = document.getElementById('quote_id').value;
-    fetch(url,{
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'X-CSRFToken':csrftoken,
-        },
-        body:JSON.stringify([codigo, quantity, quoteId])
-    })
-        .then((response)=>{
-            return response.json();
-        })
-        .then((data)=>{
-            console.log(data)
-		if (data === 'No hay stock suficiente'){
-			alert('No hay suficiente stock')
-		}
-		else if (typeof data === 'object' && data.warning){
-			alert(data.warning)
-			location.reload()
-		}
-		else if (data.message || data.success){
-			// Successfully added, reload to get updated items and totals
-			location.reload()
-		}
-		else {
-			alert('Error adding item')
-		}
-        })
-        .catch((error) => {
-            console.error('Error:', error)
-            alert('Failed to add item')
-        })
+     let url = "/quote/itemview"
+     const quoteId = document.getElementById('quote_id').value;
+     fetch(url,{
+         method:'POST',
+         headers:{
+             'Content-Type':'application/json',
+             'X-CSRFToken':csrftoken,
+         },
+         body:JSON.stringify([codigo, quantity, quoteId])
+     })
+         .then((response)=>{
+             return response.json();
+         })
+         .then((data)=>{
+             console.log(data)
+             if (data === 'No hay stock suficiente'){
+                 alert('No hay suficiente stock')
+             }
+             else if (data.success){
+                 // Successfully added, reload to get updated items and totals
+                 location.reload()
+             }
+             else {
+                 alert('Error adding item')
+             }
+         })
+         .catch((error) => {
+             console.error('Error:', error)
+             alert('Failed to add item')
+         })
 }
 
 //delete quote items

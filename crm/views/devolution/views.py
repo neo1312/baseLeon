@@ -132,10 +132,10 @@ def devolutionItemView(request):
             quantity=int(repetido.quantity)+int(quantity)
             devolutionItem.objects.filter(id=repetido.id).delete()
             devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
-            return JsonResponse('se sumaron',safe=False)
+            return JsonResponse({'success': True, 'message': 'se sumaron', 'cart_total': devolution.get_cart_total},safe=False)
         else:
             devolutionItem.objects.create(product=product,devolution=devolution,quantity=quantity,cost=cost,margen=margen)
-            return JsonResponse('creo nuevo registro',safe=False)
+            return JsonResponse({'success': True, 'message': 'creo nuevo registro', 'cart_total': devolution.get_cart_total},safe=False)
 
 @csrf_exempt
 def devolutionItemDelete(request,pk):

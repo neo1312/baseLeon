@@ -177,10 +177,10 @@ def quoteItemView(request):
             quantity=int(repetido.quantity)+int(quantity)
             quoteItem.objects.filter(id=repetido.id).delete()
             quoteItem.objects.create(product=product,quote=quote,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
-            return JsonResponse({'message': 'se sumaron', 'warning': warning},safe=False)
+            return JsonResponse({'success': True, 'message': 'se sumaron', 'warning': warning, 'cart_total': quote.get_cart_total},safe=False)
         else:
             quoteItem.objects.create(product=product,quote=quote,quantity=quantity,cost=cost,margen=margen,monedero=monedero)
-            return JsonResponse({'message': 'creo nuevo registro', 'warning': warning},safe=False)
+            return JsonResponse({'success': True, 'message': 'creo nuevo registro', 'warning': warning, 'cart_total': quote.get_cart_total},safe=False)
 
 @csrf_exempt
 def quoteItemDelete(request,pk):
