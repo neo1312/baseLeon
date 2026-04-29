@@ -1,5 +1,5 @@
 from django.contrib import admin
-from crm.models import Client,Sale,saleItem,Devolution,devolutionItem
+from crm.models import Client,Sale,saleItem,Devolution,devolutionItem,Quote,quoteItem
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
@@ -70,4 +70,31 @@ class devolutionItemAdmin(ImportExportModelAdmin,admin.ModelAdmin):
 
 admin.site.register(devolutionItem,devolutionItemAdmin)
 
+class quoteResource(resources.ModelResource):
+    class Meta:
+        model = Quote
+
+class quoteAdmin(ImportExportModelAdmin,admin.ModelAdmin):
+    search_fields=('id',)
+    list_filter=('client','tipo','monedero')
+    resource_class=quoteResource
+    list_display=('id','client','tipo','get_cart_total','monedero','date_created')
+    ordering = ('id','date_created')
+    date_hierarchy='date_created'
+
+admin.site.register(Quote,quoteAdmin)
+
+class quoteItemResource(resources.ModelResource):
+    class Meta:
+        model = quoteItem
+
+class quoteItemAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = quoteItemResource
+    list_display = ('id', 'quote', 'quantity','product', 'monedero', 'date_created')
+    ordering = ('id', 'date_created')
+    search_fields = ('id',)
+    date_hierarchy = 'date_created'
+    list_filter = ('quote',)
+
+admin.site.register(quoteItem, quoteItemAdmin)
 

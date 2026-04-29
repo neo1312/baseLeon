@@ -1,4 +1,5 @@
 {% extends 'list.html' %}
+{% load static %}
 
 {% block columns %}
     <tr>
@@ -23,25 +24,106 @@
                 <a href="/quote/pdfprint/{{ o.id }}" class="btn btn-secondary btn-xs btn-flat">
                     <i class="fas fa-print"></i>
                 </a>
-                <a href="#" class="btn btn-success btn-xs btn-flat quote-to-sale-btn" data-quote-id="{{ o.id }}">
+                <button class="btn btn-success btn-xs btn-flat" type="button" onclick="convertQuoteToSale({{ o.id }})">
                     <i class="fas fa-arrow-right"></i> Sale
-                </a>
+                </button>
             </td>
         </tr>
     {% endfor %}
 {% endblock %}
 
+<!-- Modal for Stock Check -->
+<div class="modal fade" id="stockCheckModal" tabindex="-1" role="dialog" aria-labelledby="stockCheckModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="stockCheckModalLabel">
+          <i class="fas fa-boxes"></i> Verificando Stock
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="stockCheckContent">
+        <div class="text-center">
+          <div class="spinner-border text-info" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+          <p class="mt-3">Checking product availability...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Confirmation -->
+<div class="modal fade" id="confirmConversionModal" tabindex="-1" role="dialog" aria-labelledby="confirmConversionLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="confirmConversionLabel">
+          <i class="fas fa-check-circle"></i> Confirmar Conversión
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>✓ Stock disponible</strong></p>
+        <p>¿Deseas convertir esta cotización a venta?</p>
+        <p class="text-muted small">Una vez convertida, se creará una nueva venta con los productos de esta cotización.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">No, cancelar</button>
+        <button type="button" class="btn btn-success" id="confirmConversionBtn" onclick="proceedWithConversion()">
+          <i class="fas fa-arrow-right"></i> Sí, crear venta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Error -->
+<div class="modal fade" id="errorStockModal" tabindex="-1" role="dialog" aria-labelledby="errorStockLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="errorStockLabel">
+          <i class="fas fa-exclamation-circle"></i> Stock Insuficiente
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="errorStockContent">
+        <!-- Error details will be populated here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'lib/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'lib/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
 <script>
-document.querySelectorAll('.quote-to-sale-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const quoteId = this.getAttribute('data-quote-id');
-        convertQuoteToSale(quoteId);
-    });
+let currentQuoteId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Quote list page loaded');
 });
 
 function convertQuoteToSale(quoteId) {
+    currentQuoteId = quoteId;
     console.log('Converting quote ' + quoteId);
+    
+    // Show loading modal
+    $('#stockCheckModal').modal('show');
     
     // Check stock before converting
     fetch('/quote/check-stock/' + quoteId + '/', {
@@ -52,31 +134,73 @@ function convertQuoteToSale(quoteId) {
         }
     })
     .then(function(response) {
+        console.log('Response received:', response.status);
         return response.json();
     })
     .then(function(data) {
         console.log('Stock check response:', data);
+        
+        // Hide loading modal
+        $('#stockCheckModal').modal('hide');
+        
         if (data.success) {
-            // All stock available, proceed with conversion
-            alert('✓ Stock validated! Converting quote ' + quoteId + ' to sale...');
-            window.location.href = '/quote/to-sale/' + quoteId + '/';
+            // All stock available, show confirmation
+            $('#confirmConversionModal').modal('show');
         } else {
-            // Show error with details
-            var message = '✗ Cannot convert quote - insufficient stock:\n\n';
-            if (data.details && data.details.length > 0) {
-                data.details.forEach(function(item) {
-                    message += item.product + ':\n  Required: ' + item.requested + '\n  Available: ' + item.available + '\n\n';
-                });
-            } else {
-                message += data.error || 'Unknown error';
-            }
-            alert(message);
+            // Show error modal with details
+            showStockError(data);
         }
     })
     .catch(function(error) {
         console.error('Error:', error);
-        alert('❌ Error checking stock: ' + error.message);
+        $('#stockCheckModal').modal('hide');
+        
+        let errorHtml = '<div class="alert alert-danger" role="alert">';
+        errorHtml += '<strong>Error al verificar stock:</strong><br>';
+        errorHtml += error.message;
+        errorHtml += '</div>';
+        
+        $('#errorStockContent').html(errorHtml);
+        $('#errorStockModal').modal('show');
     });
+}
+
+function showStockError(data) {
+    let errorHtml = '<div class="alert alert-warning" role="alert">';
+    errorHtml += '<strong>No hay suficiente stock para los siguientes productos:</strong>';
+    errorHtml += '<table class="table table-sm mt-3">';
+    errorHtml += '<thead><tr><th>Producto</th><th>Solicitado</th><th>Disponible</th><th>Falta</th></tr></thead><tbody>';
+    
+    if (data.details && data.details.length > 0) {
+        data.details.forEach(function(item) {
+            const shortage = item.requested - item.available;
+            errorHtml += '<tr>';
+            errorHtml += '<td>' + item.product + '</td>';
+            errorHtml += '<td class="text-center">' + item.requested + '</td>';
+            errorHtml += '<td class="text-center">' + item.available + '</td>';
+            errorHtml += '<td class="text-center text-danger"><strong>' + shortage + '</strong></td>';
+            errorHtml += '</tr>';
+        });
+    }
+    
+    errorHtml += '</tbody></table>';
+    errorHtml += '</div>';
+    
+    $('#errorStockContent').html(errorHtml);
+    $('#errorStockModal').modal('show');
+}
+
+function proceedWithConversion() {
+    if (currentQuoteId) {
+        // Hide confirmation modal
+        $('#confirmConversionModal').modal('hide');
+        
+        // Show loading modal
+        $('#stockCheckModal').modal('show');
+        
+        // Proceed with conversion
+        window.location.href = '/quote/to-sale/' + currentQuoteId + '/';
+    }
 }
 
 function getCookie(name) {
