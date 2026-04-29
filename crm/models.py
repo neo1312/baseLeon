@@ -322,11 +322,12 @@ def OrderItemSignal(sender, instance, created, **kwargs):
         
         # Only apply rewards for "menudeo" (retail) sales, not "mayoreo" (wholesale)
         if instance.sale.monedero == False and instance.sale.tipo != 'mayoreo':
-            # Get tier-based reward percentage including current sale
+            # Get tier-based reward percentage
+            # NOTE: include_current_sale_amount=0 because post_save fires AFTER item is saved to DB
             try:
                 tier_status = cliente.tier_status
-                # Include current sale item in tier calculation
-                tier_status.get_current_tier(include_current_sale_amount=instance.get_total)
+                # Tier calculation already includes this item (it's in the DB now)
+                tier_status.get_current_tier(include_current_sale_amount=0)
                 monedero_percentaje = tier_status.get_wallet_percentage() / 100  # Convert from % to decimal
             except:
                 monedero_percentaje = 0
