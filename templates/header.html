@@ -1,10 +1,13 @@
 {% load static %}
 <!-- Navbar -->
-<nav class="main-header navbar navbar-expand-md navbar-light" style="background: linear-gradient(135deg, #0066cc 0%, #004999 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+<nav class="main-header navbar navbar-expand-md navbar-light" style="background: linear-gradient(135deg, {% if section_color %}{{ section_color }}{% else %}#0066cc{% endif %} 0%, {% if section_color_dark %}{{ section_color_dark }}{% else %}#004999{% endif %} 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
     <div class="container">
         <a href="/" class="navbar-brand d-flex align-items-center">
-            <i class="fas fa-hammer mr-2" style="font-size: 1.8rem; color: white;"></i>
-            <span class="brand-text font-weight-bold text-white">Ferretería León</span>
+            {% if section_icon %}<i class="{{ section_icon }} mr-2" style="font-size: 1.8rem; color: white;"></i>{% else %}<i class="fas fa-hammer mr-2" style="font-size: 1.8rem; color: white;"></i>{% endif %}
+            <div class="d-flex flex-column">
+                <span class="brand-text font-weight-bold text-white">Ferretería León</span>
+                {% if section_title %}<small class="text-white" style="font-size: 0.75rem; opacity: 0.9;">{{ section_title }}</small>{% endif %}
+            </div>
         </a>
         <button class="navbar-toggler order-1 border-0" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">

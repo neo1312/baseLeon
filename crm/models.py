@@ -318,12 +318,28 @@ def OrderItemSignal(sender, instance, created, **kwargs):
     if instance.sale and instance.sale.client:
         clientId = instance.sale.client.id
         cliente = Client.objects.get(id=clientId)
-        if instance.sale.monedero == False:
-            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
-            cliente.monedero = instance.get_total * monedero_percentaje + float(cliente.monedero)
-            cliente.save()
-            logger.info(f"Added monedero to client {clientId}: {instance.get_total * monedero_percentaje}")
+        
+        # Only apply rewards for "menudeo" (retail) sales, not "mayoreo" (wholesale)
+        if instance.sale.monedero == False and instance.sale.tipo != 'mayoreo':
+            # Get tier-based reward percentage including current sale
+            try:
+                tier_status = cliente.tier_status
+                # Include current sale item in tier calculation
+                tier_status.get_current_tier(include_current_sale_amount=instance.get_total)
+                monedero_percentaje = tier_status.get_wallet_percentage() / 100  # Convert from % to decimal
+            except:
+                monedero_percentaje = 0
+            
+            if monedero_percentaje > 0:  # Only add if client has a valid tier
+                reward_amount = float(instance.get_total) * monedero_percentaje
+                cliente.monedero = float(cliente.monedero) + reward_amount
+                cliente.save()
+                tier_name = cliente.tier_status.tier.get_name_display() if cliente.tier_status.tier else "None"
+                logger.info(f"Added tier-based monedero to client {clientId}: ${reward_amount:.2f} (Tier: {tier_name}, Total 30d: ${cliente.tier_status.last_30_days_sales:.2f})")
+        elif instance.sale.tipo == 'mayoreo':
+            logger.info(f"Skipped reward for mayoreo sale {instance.sale.id} - rewards only for menudeo")
         else:
+            # Wallet payment mode
             if instance.get_total >= cliente.monedero:
                 cliente.monedero = 0
                 cliente.save()
@@ -527,17 +543,34 @@ def OrderItemSignalDevolutionSave(sender, instance, **kwargs):
     else:
         logger.warning(f"devolutionItem instance has no associated product: {instance}")
 
-     # Check if the sale and client exist
+     # Check if the devolution and client exist
     if instance.devolution and instance.devolution.client:
         clientId = instance.devolution.client.id
         cliente = Client.objects.get(id=clientId)
-        if instance.devolution.monedero == False: #because this is not a sale with monedero it has to agregare some on the moneder client
-            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
-            cliente.monedero = float(cliente.monedero) - (instance.get_total * monedero_percentaje) 
-            cliente.save()
-            logger.info(f"Removed monedero from devolution client {clientId}: {instance.get_total * monedero_percentaje}")
+        if instance.devolution.monedero == False:
+            # Remove tier-based reward that was applied during the original sale
+            try:
+                tier_status = cliente.tier_status
+                # Recalculate tier AFTER removing this devolution amount
+                tier_status.get_current_tier(include_current_sale_amount=-float(instance.get_total))
+                monedero_percentaje = tier_status.get_wallet_percentage() / 100
+            except:
+                monedero_percentaje = 0
+            
+            if monedero_percentaje > 0:
+                # Remove the reward amount that was applied
+                reward_amount = float(instance.get_total) * monedero_percentaje
+                cliente.monedero = float(cliente.monedero) - reward_amount
+                if cliente.monedero < 0:
+                    cliente.monedero = 0
+                cliente.save()
+                tier_name = cliente.tier_status.tier.get_name_display() if cliente.tier_status.tier else "None"
+                logger.info(f"Removed tier-based reward from devolution client {clientId}: ${reward_amount:.2f} (Tier: {tier_name}, New 30d total: ${cliente.tier_status.last_30_days_sales:.2f})")
+            else:
+                logger.info(f"Devolution for client {clientId}: no reward to remove (tier < Bronze or below minimum)")
 
-        else:#the client is using his monedro to pay
+        else:
+            # Wallet payment - nothing needed as it was subtracted during devolution
             pass
     else:
         logger.warning(f"devolutionItem instance has no associated devolution or client: {instance}")
@@ -559,15 +592,167 @@ def OrderItemSignalDevolutionDelete(sender,instance,**kwargs):
     else:
         logger.warning(f"devolutionItem instance has no associated product: {instance}")
 
-     # Check if the sale and client exist
+     # Check if the devolution and client exist
     if instance.devolution and instance.devolution.client:
             clientId = instance.devolution.client.id
             cliente = Client.objects.get(id=clientId)
-            monedero_percentaje = float(instance.product.monedero_percentaje) if instance.product else 0
-            cliente.monedero = float(cliente.monedero) + (instance.get_total * monedero_percentaje) 
-            cliente.save()
-            logger.info(f"Added monedero to devolution client {clientId}: {instance.get_total * monedero_percentaje}")
+            
+            # When a devolution item is deleted, reverse the reward removal
+            # This means we ADD BACK the reward that was removed during the devolution post_save
+            try:
+                tier_status = cliente.tier_status
+                # Recalculate tier as if the devolved item was re-added
+                tier_status.get_current_tier(include_current_sale_amount=float(instance.get_total))
+                monedero_percentaje = tier_status.get_wallet_percentage() / 100
+            except:
+                monedero_percentaje = 0
+            
+            if monedero_percentaje > 0:
+                # Add back the reward that was removed
+                reward_amount = float(instance.get_total) * monedero_percentaje
+                cliente.monedero = float(cliente.monedero) + reward_amount
+                cliente.save()
+                tier_name = cliente.tier_status.tier.get_name_display() if cliente.tier_status.tier else "None"
+                logger.info(f"Restored tier-based reward to devolution client {clientId}: ${reward_amount:.2f} (Tier: {tier_name})")
+            else:
+                logger.info(f"Devolution deleted for client {clientId}: no reward to restore (tier < Bronze)")
 
     else:
         logger.warning(f"devolutionItem instance has no associated devolution or client: {instance}")
 
+
+
+class ClientTier(models.Model):
+    TIER_CHOICES = [
+        ('gold', 'Gold'),
+        ('silver', 'Silver'),
+        ('bronze', 'Bronze'),
+    ]
+    
+    name = models.CharField(
+        max_length=50,
+        choices=TIER_CHOICES,
+        unique=True,
+        verbose_name='Tier Name'
+    )
+    min_monthly_sales = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='Minimum Monthly Sales Amount',
+        help_text='Minimum sales amount required to maintain this tier'
+    )
+    wallet_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name='Wallet Reward Percentage',
+        help_text='Percentage of sale amount added to client wallet'
+    )
+    date_created = models.DateTimeField(blank=True, null=True)
+    last_updated = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.get_name_display()} - Min: ${self.min_monthly_sales} / Reward: {self.wallet_percentage}%'
+
+    def save(self, *args, **kwargs):
+        if self.date_created is None:
+            self.date_created = timezone.localtime(timezone.now())
+        self.last_updated = timezone.localtime(timezone.now())
+        super(ClientTier, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Client Tier'
+        verbose_name_plural = 'Client Tiers'
+        ordering = ['-min_monthly_sales']
+
+
+class ClientTierStatus(models.Model):
+    client = models.OneToOneField(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='tier_status',
+        verbose_name='Client'
+    )
+    tier = models.ForeignKey(
+        ClientTier,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Current Tier',
+        help_text='Automatically calculated based on last 30 days average sales'
+    )
+    last_30_days_sales = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name='Last 30 Days Sales',
+        help_text='Total sales from the last 30 days'
+    )
+    last_calculated = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Last Tier Calculated'
+    )
+    date_created = models.DateTimeField(blank=True, null=True)
+    last_updated = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        tier_name = self.tier.get_name_display() if self.tier else "Regular (No Tier)"
+        return f'{self.client.name} - {tier_name}'
+
+    def get_current_tier(self, include_current_sale_amount=0):
+        """Calculate and return the current tier based on last 30 days sales
+        
+        Args:
+            include_current_sale_amount: Amount of current sale to include in calculation
+                                        (for the sale being processed now)
+        """
+        from datetime import timedelta
+        from django.utils import timezone
+        
+        # Get all sales from last 30 days for this client
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        sales = Sale.objects.filter(
+            client=self.client,
+            date_created__gte=thirty_days_ago
+        ).prefetch_related('saleitem_set')
+        
+        # Calculate total by iterating through items
+        total_30_days = 0
+        for sale in sales:
+            for item in sale.saleitem_set.all():
+                total_30_days += float(item.get_total)
+        
+        # Add the current sale amount (for the sale being processed now)
+        total_30_days = float(total_30_days) + float(include_current_sale_amount)
+        self.last_30_days_sales = total_30_days
+        
+        # Find appropriate tier based on total including current sale
+        tiers = ClientTier.objects.all().order_by('-min_monthly_sales')
+        assigned_tier = None
+        
+        for tier in tiers:
+            if float(self.last_30_days_sales) >= float(tier.min_monthly_sales):
+                assigned_tier = tier
+                break
+        
+        self.tier = assigned_tier
+        self.last_calculated = timezone.now()
+        self.save()
+        return assigned_tier
+
+    def get_wallet_percentage(self):
+        """Get the wallet reward percentage for the current tier"""
+        if self.tier:
+            return float(self.tier.wallet_percentage)
+        return 0
+
+    def save(self, *args, **kwargs):
+        if self.date_created is None:
+            self.date_created = timezone.localtime(timezone.now())
+        self.last_updated = timezone.localtime(timezone.now())
+        super(ClientTierStatus, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Client Tier Status'
+        verbose_name_plural = 'Client Tier Statuses'
+        ordering = ['client']

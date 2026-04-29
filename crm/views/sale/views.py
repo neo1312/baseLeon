@@ -15,6 +15,19 @@ from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
 from escpos.printer import File 
 
+# Section configuration
+SALE_SECTION = {
+    'section_title': 'Ventas',
+    'section_icon': 'fas fa-shopping-cart',
+    'section_color': '#0066CC',  # Primary blue
+    'section_color_dark': '#004999'
+}
+
+def add_section_context(data):
+    """Add section styling to context"""
+    data.update(SALE_SECTION)
+    return data
+
 @csrf_exempt
 def saleCreateNew(request):
     data = {
@@ -24,6 +37,7 @@ def saleCreateNew(request):
             'entity':'products',
             'url_create':'/product/create',
             }
+    data = add_section_context(data)
     return render(request, 'sale/createnew.html', data)
 
 
@@ -59,6 +73,7 @@ def saleList(request):
         'start_date': start_date_str,
         'end_date': end_date_str,
     }
+    data = add_section_context(data)
     return render(request, 'sale/list.html', data)
 
 @csrf_exempt
@@ -107,6 +122,7 @@ def saleCreate(request, sale_id):
             'returnCreate':'/sale/new',
             'default_client_id':int("1")
             }
+    context = add_section_context(context)
     print (total)
     return render(request, 'sale/create.html',context)
 
@@ -292,6 +308,7 @@ def saleNew(request):
             'clients':clients,
             'default_client_id':default_client_id
             }
+    data = add_section_context(data)
     return render(request, 'sale/new.html', data)
 
 @csrf_exempt

@@ -1,5 +1,7 @@
 {% extends 'new.html' %}
 
+{% block content %}
+<div class="card-body bg-white">
 {%block botones%}
 
 <div class="container-fluid my-4">
@@ -54,3 +56,38 @@
 </div>
 
 {%endblock%}
+
+</div>
+
+{%block lastBotones%}
+<div class="card-footer">
+  <div class="row">
+    <div class="col-12">
+      <!-- Buttons Section -->
+      <div class="d-flex justify-content-center">
+        <button type="button" class="btn btn-warning btn-lg px-5 mx-4" id="btnOrderList">
+          <i class="fas fa-plus mr-2"></i> Nueva Devolución
+        </button>
+        <a href="/devolution/last" class="btn btn-warning btn-lg px-5 mx-4">
+          <i class="fas fa-folder-open"></i> Última Devolución
+        </a>
+      </div>
+    </div>
+    <div class="col-12 mt-4">
+      <!-- Date Filter Form -->
+      <form method="get" action="{% url 'crm:devolutionList' %}" class="d-flex align-items-center gap-2 justify-content-center">
+        <label for="start_date" class="me-0 fw-bold">Desde:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date|default_if_none:'' }}" class="form-control" style="width: 150px;">
+        
+        <label for="end_date" class="me-0 fw-bold">Hasta:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date|default_if_none:'' }}" class="form-control" style="width: 150px;">
+        
+        <button type="submit" class="btn btn-warning">
+          <i class="fas fa-filter"></i> Filtrar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{%endblock%}
+{% endblock %}

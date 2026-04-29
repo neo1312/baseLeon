@@ -10,6 +10,19 @@ from django.views.decorators.csrf import csrf_exempt
 from crm.models import Devolution,devolutionItem,Client,Product,devolutionItem
 from crm.forms import devolutionForm
 
+# Section configuration
+DEVOLUTION_SECTION = {
+    'section_title': 'Devoluciones',
+    'section_icon': 'fas fa-undo',
+    'section_color': '#FFC107',  # Warning yellow
+    'section_color_dark': '#E0A800'
+}
+
+def add_section_context(data):
+    """Add section styling to context"""
+    data.update(DEVOLUTION_SECTION)
+    return data
+
 @csrf_exempt
 def devolutionList(request):
     data = {
@@ -23,7 +36,7 @@ def devolutionList(request):
             'btnId':'btnOrderList',
             'home':'home'
             }
- 
+    data = add_section_context(data)
     return render(request, 'devolution/list.html', data)
 
 @csrf_exempt
@@ -41,7 +54,8 @@ def devolutionEdit(request,pk):
             'title' : 'devolution Edit',
             'entity':'devolutiones',
             'retornoLista':'/devolution/list',
-            } 
+            }
+    context = add_section_context(context)
     return render(request, 'devolution/edit.html',context) 
 
 @csrf_exempt
@@ -57,6 +71,7 @@ def devolutionDelete(request,pk):
             'entity':'devolutiones',
             'retornoLista':'/devolution/list',
             }
+    context = add_section_context(context)
     return render(request,  'devolution/delete.html',context)
 
 @csrf_exempt
@@ -71,6 +86,7 @@ def devolutionCreate(request, devolution_id):
             'returnList':'/devolution/list',
             'returnCreate':'/devolution/new'
             }
+    context = add_section_context(context)
     return render(request, 'devolution/create.html',context)
 
 @csrf_exempt
@@ -177,6 +193,29 @@ def devpdfPrint(request,pk):
     return response
 
 @csrf_exempt
+def devolutionLast(request):
+    devolution=Devolution.objects.last()
+    items=devolution.devolutionitem_set.all()
+    data={
+            "devolution":devolution,
+            "devolutionId":devolution.id,
+            "items":items,
+            }
+    template_path = 'devolution/pdfprint.html'
+    context = data
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="devolution.pdf"'
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funy view
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
+
 @csrf_exempt
 def devolutionNew(request):
     clients = Client.objects.all()
@@ -195,5 +234,5 @@ def devolutionNew(request):
             'clients':clients,
             'default_client_id':default_client_id
             }
- 
+    data = add_section_context(data)
     return render(request, 'devolution/new.html', data)

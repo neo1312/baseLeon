@@ -6,7 +6,7 @@ from crm.home_views import home, user_login, user_logout
 from crm.views.client.views import clientList, clientCreate,clientEdit,clientDelete
 from crm.views.sale.views import saleList, saleInicia,saleEdit,saleDelete,saleCreate,saleGetData,saleItemView,saleItemDelete,salepdfPrint,saleNew,saleLast,saleCreateNew,sale_ticket_json,print_ticket_view,saleItemUpdateQuantity
 from crm.views.quote.views import quoteList, quoteInicia,quoteEdit,quoteDelete,quoteCreate,quoteGetData,quoteItemView,quoteItemDelete,quotepdfPrint,quoteNew,quoteLast,quoteToSale,quoteCheckStock
-from crm.views.devolution.views import devolutionList, devolutionEdit, devolutionDelete, devolutionCreate,devolutionInicia,devolutionItemView,devolutionGetData,devolutionItemDelete,devpdfPrint,devolutionNew
+from crm.views.devolution.views import devolutionList, devolutionEdit, devolutionDelete, devolutionCreate,devolutionInicia,devolutionItemView,devolutionGetData,devolutionItemDelete,devpdfPrint,devolutionNew,devolutionLast
 
 
 app_name='crm'
@@ -65,6 +65,7 @@ urlpatterns=[
         path('devolution/inicia',devolutionInicia,name='devolutionInicia'),
         path('devolution/itemview',devolutionItemView,name='devolutionItemView'),
         path('devolution/getdata',devolutionGetData,name='devolutionGetData'),
+        path('devolution/last',devolutionLast,name='devolutionLast'),
 
         path('devolution/itemdelete/<int:pk>/',devolutionItemDelete,name='devolutiuonItemDelete'),
         path('devolution/pdfprint/<int:pk>/',devpdfPrint,name='devpdfPrint'),

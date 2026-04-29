@@ -12,6 +12,18 @@ from crm.forms import quoteForm
 from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta
 
+# Section configuration
+QUOTE_SECTION = {
+    'section_title': 'Cotizaciones',
+    'section_icon': 'fas fa-quote-left',
+    'section_color': '#17A2B8',  # Info blue
+    'section_color_dark': '#0C5A6F'
+}
+
+def add_section_context(data):
+    """Add section styling to context"""
+    data.update(QUOTE_SECTION)
+    return data
 
 @csrf_exempt
 def quoteList(request):
@@ -44,6 +56,7 @@ def quoteList(request):
         'start_date': start_date_str,
         'end_date': end_date_str,
     }
+    data = add_section_context(data)
     return render(request, 'quote/list.html', data)
 
 @csrf_exempt
@@ -62,6 +75,7 @@ def quoteEdit(request,pk):
             'entity':'quotees',
             'retornoLista':'/quote/list',
             } 
+    context = add_section_context(context)
     return render(request, 'quote/edit.html',context) 
 
 @csrf_exempt
@@ -77,6 +91,7 @@ def quoteDelete(request,pk):
             'entity':'quotees',
             'retornoLista':'/quote/list',
             }
+    context = add_section_context(context)
     return render(request,  'quote/delete.html',context)
 
 @csrf_exempt
@@ -92,6 +107,7 @@ def quoteCreate(request, quote_id):
             'returnCreate':'/quote/new',
             'default_client_id':int("1")
             }
+    context = add_section_context(context)
     print (total)
     return render(request, 'quote/create.html',context)
 
@@ -237,6 +253,7 @@ def quoteNew(request):
             'clients':clients,
             'default_client_id':default_client_id
             }
+    data = add_section_context(data)
     return render(request, 'quote/new.html', data)
 
 @csrf_exempt
