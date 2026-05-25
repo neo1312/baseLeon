@@ -113,3 +113,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SESSION_COOKIE_NAME = 'app_a_sessionid'
+CSRF_COOKIE_NAME = 'app_a_csrftoken'
+
